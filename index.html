@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Coder - Video Coding Tool</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>⚽ Football Match Coder</h1>
+                <div class="session-info">
+                    <input type="text" id="sessionName" placeholder="Session Name" class="session-input">
+                    <input type="text" id="homeTeam" placeholder="Home Team" class="session-input">
+                    <input type="text" id="awayTeam" placeholder="Away Team" class="session-input">
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="loadVideoBtn" class="btn btn-secondary">Load Video</button>
+                <button id="saveVideoBtn" class="btn btn-secondary" style="display: none;">Save Video</button>
+                <button id="shortcutsBtn" class="btn btn-secondary">Shortcuts</button>
+                <div class="template-dropdown">
+                    <button id="templateBtn" class="btn btn-secondary">Templates ▼</button>
+                    <div class="template-menu" id="templateMenu">
+                        <div class="template-header">Event Templates</div>
+                        <input type="text" id="templateNameInput" placeholder="Template name" class="preset-input">
+                        <div class="template-actions">
+                            <button id="saveTemplateBtn" class="btn btn-small">Save Current Sequence</button>
+                            <button id="loadTemplateBtn" class="btn btn-small">Apply Template</button>
+                        </div>
+                        <select id="templateSelect" class="preset-select">
+                            <option value="">Select a template...</option>
+                        </select>
+                        <div id="templatePreview" class="template-preview"></div>
+                        <button id="deleteTemplateBtn" class="btn btn-small" style="margin-top: 0.5rem; width: 100%; background: #dc2626;">Delete Template</button>
+                    </div>
+                </div>
+                <div class="preset-dropdown">
+                    <button id="presetBtn" class="btn btn-secondary">Button Presets ▼</button>
+                    <div class="preset-menu" id="presetMenu">
+                        <div class="preset-header">Manage Presets</div>
+                        <input type="text" id="presetNameInput" placeholder="Preset name" class="preset-input">
+                        <div class="preset-actions">
+                            <button id="savePresetBtn" class="btn btn-small">Save Current</button>
+                            <button id="loadPresetBtn" class="btn btn-small">Load Preset</button>
+                        </div>
+                        <select id="presetSelect" class="preset-select">
+                            <option value="">Select a preset...</option>
+                        </select>
+                        <div class="preset-checkboxes" id="presetCheckboxes"></div>
+                        <button id="resetPresetBtn" class="btn btn-small" style="margin-top: 0.5rem; width: 100%;">Reset to Default</button>
+                    </div>
+                </div>
+                <button id="saveBtn" class="btn btn-primary">Save Session</button>
+                <div class="export-dropdown">
+                    <button id="exportBtn" class="btn btn-success">Export Data ▼</button>
+                    <div class="export-menu" id="exportMenu">
+                        <button class="export-option" data-format="csv">CSV</button>
+                        <button class="export-option" data-format="excel">Excel (.xlsx)</button>
+                        <button class="export-option" data-format="xml">XML</button>
+                        <button class="export-option" data-format="json">JSON (Events Only)</button>
+                        <button class="export-option" data-format="jsonl">JSON Lines</button>
+                        <button class="export-option" data-format="sql">SQL INSERT</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Video Player Section -->
+            <div class="video-section" id="videoSection">
+                <div class="video-resizer" id="videoResizer"></div>
+                <div class="video-container">
+                    <video id="videoPlayer">
+                        <source src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="video-overlay">
+                        <div class="current-time-display" id="currentTime">00:00:00</div>
+                    </div>
+                    <!-- Custom Video Timeline -->
+                    <div class="video-timeline-container">
+                        <div class="video-timeline">
+                            <div class="timeline-header">
+                                <span>Event Timeline</span>
+                                <div class="timeline-zoom-controls">
+                                    <button id="timelineZoomOut" class="zoom-btn" title="Zoom Out">−</button>
+                                    <span id="timelineZoomLevel">1x</span>
+                                    <button id="timelineZoomIn" class="zoom-btn" title="Zoom In">+</button>
+                                    <button id="timelineResetZoom" class="zoom-btn" title="Reset Zoom">Reset</button>
+                                </div>
+                            </div>
+                            <div class="timeline-track-container" id="timelineTrackContainer">
+                                <div class="timeline-track" id="timelineTrack">
+                                    <div class="timeline-progress" id="timelineProgress"></div>
+                                    <div class="timeline-handle" id="timelineHandle"></div>
+                                    <div class="timeline-events" id="timelineEvents"></div>
+                                    <div class="timeline-time-marks" id="timelineTimeMarks"></div>
+                                </div>
+                            </div>
+                            <div class="timeline-info">
+                                <span id="timelineCurrent">00:00:00</span>
+                                <span id="timelineDuration">00:00:00</span>
+                            </div>
+                        </div>
+                        <!-- Play/Pause Controls -->
+                        <div class="video-controls-main">
+                            <button id="playPauseMain" class="control-btn-main" title="Play/Pause (Space)">▶</button>
+                            <div class="timeline-controls">
+                                <button id="rewind" class="control-btn-small" title="Rewind 5s">⏪</button>
+                                <button id="forward" class="control-btn-small" title="Forward 5s">⏩</button>
+                                <button id="syncTimeBtn" class="control-btn-small" title="Sync match time with video">🔄 Sync</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Video Controls -->
+                <div class="video-controls">
+                    <div class="playback-controls">
+                        <button id="playPause" class="control-btn">▶ Play</button>
+                        <button id="rewind" class="control-btn">⏪ -5s</button>
+                        <button id="forward" class="control-btn">⏩ +5s</button>
+                        <button id="slowMotion" class="control-btn">🐌 0.5x</button>
+                        <button id="normalSpeed" class="control-btn">▶ 1.0x</button>
+                        <button id="fastForward" class="control-btn">⚡ 2.0x</button>
+                    </div>
+                    <div class="speed-control">
+                        <label>Playback Speed:</label>
+                        <input type="range" id="speedSlider" min="0.25" max="2" step="0.25" value="1">
+                        <span id="speedValue">1.0x</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coding Panel -->
+            <div class="coding-panel" id="codingPanel">
+                <div class="panel-resizer" id="panelResizer"></div>
+                <!-- Match Info -->
+                <div class="section">
+                    <h3>Match Information</h3>
+                    <div class="input-group">
+                        <label>Half:</label>
+                        <select id="half" class="select-input">
+                            <option value="1">1st Half</option>
+                            <option value="2">2nd Half</option>
+                            <option value="ET1">Extra Time 1</option>
+                            <option value="ET2">Extra Time 2</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Minute:</label>
+                        <input type="number" id="minute" placeholder="0" class="number-input" min="0" max="120">
+                    </div>
+                    <div class="input-group">
+                        <label>Home Score:</label>
+                        <input type="number" id="homeScore" placeholder="0" class="number-input" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Away Score:</label>
+                        <input type="number" id="awayScore" placeholder="0" class="number-input" min="0">
+                    </div>
+                </div>
+
+                <!-- Lineup Loading -->
+                <div class="section">
+                    <h3>Load Lineups</h3>
+                    <div class="input-group">
+                        <label>Load from File (CSV/Excel):</label>
+                        <button id="loadLineupFileBtn" class="btn btn-secondary" style="width: 100%;">Choose File</button>
+                        <input type="file" id="lineupFileInput" accept=".csv,.xlsx,.xls" style="display: none;">
+                    </div>
+                    <div class="input-group">
+                        <label>Or Load from URL:</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="lineupUrlInput" placeholder="Enter lineup URL" class="text-input" style="flex: 1;">
+                            <button id="loadLineupUrlBtn" class="btn btn-secondary">Load</button>
+                        </div>
+                    </div>
+                    <div id="lineupStatus" class="lineup-status" style="display: none;"></div>
+                </div>
+
+                <!-- Player Selection -->
+                <div class="section">
+                    <h3>Player Selection</h3>
+                    <div class="input-group">
+                        <label>Team:</label>
+                        <select id="team" class="select-input">
+                            <option value="home">Home</option>
+                            <option value="away">Away</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Home Team Player:</label>
+                        <select id="homePlayerSelect" class="select-input">
+                            <option value="">Select Home Player</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Away Team Player:</label>
+                        <select id="awayPlayerSelect" class="select-input">
+                            <option value="">Select Away Player</option>
+                        </select>
+                    </div>
+                    <div id="loadedPlayersInfo" class="loaded-players-info" style="display: none;"></div>
+                </div>
+
+                <!-- Pass Events -->
+                <div class="section" data-category="pass">
+                    <h3>Pass Events</h3>
+                    <div class="event-buttons">
+                        <button class="event-btn pass-btn" data-event="pass-complete" data-key="P">
+                            <span class="key-hint">P</span>
+                            <span class="event-counter" data-event="pass-complete">0</span>
+                            Pass Complete
+                        </button>
+                        <button class="event-btn pass-btn" data-event="pass-incomplete" data-key="I">
+                            <span class="key-hint">I</span>
+                            <span class="event-counter" data-event="pass-incomplete">0</span>
+                            Pass Incomplete
+                        </button>
+                        <button class="event-btn pass-btn" data-event="key-pass" data-key="Shift+K">
+                            <span class="key-hint">⇧K</span>
+                            <span class="event-counter" data-event="key-pass">0</span>
+                            Key Pass
+                        </button>
+                        <button class="event-btn pass-btn" data-event="assist" data-key="A">
+                            <span class="key-hint">A</span>
+                            <span class="event-counter" data-event="assist">0</span>
+                            Assist
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shot Events -->
+                <div class="section" data-category="shot">
+                    <h3>Shot Events</h3>
+                    <div class="event-buttons">
+                        <button class="event-btn shot-btn" data-event="shot-on-target" data-key="S">
+                            <span class="key-hint">S</span>
+                            <span class="event-counter" data-event="shot-on-target">0</span>
+                            Shot On Target
+                        </button>
+                        <button class="event-btn shot-btn" data-event="shot-off-target" data-key="O">
+                            <span class="key-hint">O</span>
+                            <span class="event-counter" data-event="shot-off-target">0</span>
+                            Shot Off Target
+                        </button>
+                        <button class="event-btn shot-btn" data-event="goal" data-key="G">
+                            <span class="key-hint">G</span>
+                            <span class="event-counter" data-event="goal">0</span>
+                            Goal
+                        </button>
+                        <button class="event-btn shot-btn" data-event="shot-blocked" data-key="B">
+                            <span class="key-hint">B</span>
+                            <span class="event-counter" data-event="shot-blocked">0</span>
+                            Shot Blocked
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Defensive Events -->
+                <div class="section" data-category="defensive">
+                    <h3>Defensive Events</h3>
+                    <div class="event-buttons">
+                        <button class="event-btn defensive-btn" data-event="tackle" data-key="T">
+                            <span class="key-hint">T</span>
+                            <span class="event-counter" data-event="tackle">0</span>
+                            Tackle
+                        </button>
+                        <button class="event-btn defensive-btn" data-event="interception" data-key="N">
+                            <span class="key-hint">N</span>
+                            <span class="event-counter" data-event="interception">0</span>
+                            Interception
+                        </button>
+                        <button class="event-btn defensive-btn" data-event="clearance" data-key="C">
+                            <span class="key-hint">C</span>
+                            <span class="event-counter" data-event="clearance">0</span>
+                            Clearance
+                        </button>
+                        <button class="event-btn defensive-btn" data-event="block" data-key="Shift+L">
+                            <span class="key-hint">⇧L</span>
+                            <span class="event-counter" data-event="block">0</span>
+                            Block
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dribble & Skill Events -->
+                <div class="section" data-category="dribble">
+                    <h3>Dribble & Skills</h3>
+                    <div class="event-buttons">
+                        <button class="event-btn dribble-btn" data-event="dribble-success" data-key="D">
+                            <span class="key-hint">D</span>
+                            <span class="event-counter" data-event="dribble-success">0</span>
+                            Dribble Success
+                        </button>
+                        <button class="event-btn dribble-btn" data-event="dribble-fail" data-key="F">
+                            <span class="key-hint">F</span>
+                            <span class="event-counter" data-event="dribble-fail">0</span>
+                            Dribble Fail
+                        </button>
+                        <button class="event-btn dribble-btn" data-event="take-on" data-key="W">
+                            <span class="key-hint">W</span>
+                            <span class="event-counter" data-event="take-on">0</span>
+                            Take-On
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Foul & Card Events -->
+                <div class="section" data-category="foul">
+                    <h3>Fouls & Cards</h3>
+                    <div class="event-buttons">
+                        <button class="event-btn foul-btn" data-event="foul" data-key="U">
+                            <span class="key-hint">U</span>
+                            <span class="event-counter" data-event="foul">0</span>
+                            Foul
+                        </button>
+                        <button class="event-btn foul-btn" data-event="yellow-card" data-key="Y">
+                            <span class="key-hint">Y</span>
+                            <span class="event-counter" data-event="yellow-card">0</span>
+                            Yellow Card
+                        </button>
+                        <button class="event-btn foul-btn" data-event="red-card" data-key="Shift+R">
+                            <span class="key-hint">⇧R</span>
+                            <span class="event-counter" data-event="red-card">0</span>
+                            Red Card
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Other Events -->
+                <div class="section" data-category="other">
+                    <h3>Other Events</h3>
+                    <div class="event-buttons">
+                        <button class="event-btn other-btn" data-event="corner" data-key="1">
+                            <span class="key-hint">1</span>
+                            <span class="event-counter" data-event="corner">0</span>
+                            Corner
+                        </button>
+                        <button class="event-btn other-btn" data-event="free-kick" data-key="2">
+                            <span class="key-hint">2</span>
+                            <span class="event-counter" data-event="free-kick">0</span>
+                            Free Kick
+                        </button>
+                        <button class="event-btn other-btn" data-event="throw-in" data-key="3">
+                            <span class="key-hint">3</span>
+                            <span class="event-counter" data-event="throw-in">0</span>
+                            Throw-In
+                        </button>
+                        <button class="event-btn other-btn" data-event="offside" data-key="4">
+                            <span class="key-hint">4</span>
+                            <span class="event-counter" data-event="offside">0</span>
+                            Offside
+                        </button>
+                        <button class="event-btn other-btn" data-event="substitution" data-key="5">
+                            <span class="key-hint">5</span>
+                            <span class="event-counter" data-event="substitution">0</span>
+                            Substitution
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Location/Zone -->
+                <div class="section">
+                    <h3>Location</h3>
+                    <div class="input-group">
+                        <label>Zone:</label>
+                        <select id="zone" class="select-input">
+                            <option value="">Select Zone</option>
+                            <option value="defensive-third">Defensive Third</option>
+                            <option value="middle-third">Middle Third</option>
+                            <option value="attacking-third">Attacking Third</option>
+                            <option value="penalty-area">Penalty Area</option>
+                            <option value="box">Box</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="section">
+                    <h3>Tags</h3>
+                    <div class="input-group">
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="text" id="tagInput" placeholder="Add tag..." class="text-input" style="flex: 1;">
+                            <button id="addTagBtn" class="btn btn-small">Add</button>
+                        </div>
+                        <div id="selectedTags" class="tags-container"></div>
+                        <div class="tag-suggestions" id="tagSuggestions"></div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="section">
+                    <h3>Notes</h3>
+                    <textarea id="notes" placeholder="Add notes about this event..." class="notes-input"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Log -->
+        <div class="events-log" id="eventsLog">
+            <div class="events-log-resizer" id="eventsLogResizer"></div>
+            <div class="log-header">
+                <h3>Events Log</h3>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button id="filterBtn" class="btn btn-small">Filter</button>
+                    <button id="clearLog" class="btn btn-small">Clear Log</button>
+                </div>
+            </div>
+            <!-- Filter Panel -->
+            <div id="filterPanel" class="filter-panel" style="display: none;">
+                <div class="filter-section">
+                    <h4>Search</h4>
+                    <input type="text" id="searchInput" placeholder="Search events..." class="text-input">
+                </div>
+                <div class="filter-section">
+                    <h4>Event Type</h4>
+                    <select id="filterEventType" class="select-input" multiple style="height: 100px;">
+                        <option value="pass-complete">Pass Complete</option>
+                        <option value="pass-incomplete">Pass Incomplete</option>
+                        <option value="key-pass">Key Pass</option>
+                        <option value="assist">Assist</option>
+                        <option value="shot-on-target">Shot On Target</option>
+                        <option value="shot-off-target">Shot Off Target</option>
+                        <option value="goal">Goal</option>
+                        <option value="shot-blocked">Shot Blocked</option>
+                        <option value="tackle">Tackle</option>
+                        <option value="interception">Interception</option>
+                        <option value="clearance">Clearance</option>
+                        <option value="block">Block</option>
+                        <option value="dribble-success">Dribble Success</option>
+                        <option value="dribble-fail">Dribble Fail</option>
+                        <option value="take-on">Take-On</option>
+                        <option value="foul">Foul</option>
+                        <option value="yellow-card">Yellow Card</option>
+                        <option value="red-card">Red Card</option>
+                        <option value="corner">Corner</option>
+                        <option value="free-kick">Free Kick</option>
+                        <option value="throw-in">Throw-In</option>
+                        <option value="offside">Offside</option>
+                        <option value="substitution">Substitution</option>
+                    </select>
+                </div>
+                <div class="filter-section">
+                    <h4>Team</h4>
+                    <select id="filterTeam" class="select-input">
+                        <option value="">All Teams</option>
+                        <option value="home">Home</option>
+                        <option value="away">Away</option>
+                    </select>
+                </div>
+                <div class="filter-section">
+                    <h4>Player</h4>
+                    <input type="text" id="filterPlayer" placeholder="Player name..." class="text-input">
+                </div>
+                <div class="filter-section">
+                    <h4>Tags</h4>
+                    <div id="filterTags" class="tags-filter"></div>
+                    <input type="text" id="filterTagInput" placeholder="Add tag filter..." class="text-input" style="margin-top: 0.5rem;">
+                </div>
+                <div class="filter-section">
+                    <h4>Time Range</h4>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="number" id="filterTimeStart" placeholder="Start (sec)" class="number-input" style="flex: 1;">
+                        <input type="number" id="filterTimeEnd" placeholder="End (sec)" class="number-input" style="flex: 1;">
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button id="applyFilterBtn" class="btn btn-primary">Apply Filters</button>
+                    <button id="clearFilterBtn" class="btn btn-secondary">Clear</button>
+                    <button id="exportFilteredBtn" class="btn btn-success">Export Filtered</button>
+                </div>
+            </div>
+            <div id="eventsList" class="events-list"></div>
+        </div>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="videoFileInput" accept="video/*" style="display: none;">
+    <input type="file" id="loadSessionInput" accept=".json" style="display: none;">
+
+    <!-- Shortcuts Modal -->
+    <div id="shortcutsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Keyboard Shortcuts</h2>
+                <button id="closeShortcutsBtn" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="shortcutsContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
