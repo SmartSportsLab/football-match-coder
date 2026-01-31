@@ -15,6 +15,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    padding-bottom: 50px; /* Space for footer */
 }
 
 /* Header */
@@ -1402,4 +1403,35 @@ body {
     font-size: 0.8rem;
     color: #6ee7b7;
     text-align: center;
+}
+
+/* Footer */
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    padding: 0.75rem 1.5rem;
+    text-align: center;
+    font-size: 1rem;
+    color: #94a3b8;
+    z-index: 100;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.app-footer p {
+    margin: 0;
+}
+
+.app-footer a {
+    color: #22c55e;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.app-footer a:hover {
+    color: #4ade80;
+    text-decoration: underline;
 }

@@ -583,6 +583,24 @@ class FootballMatchCoder {
             this.hideShortcutsModal();
         });
 
+        // User Manual download
+        const downloadManualBtn = document.getElementById('downloadManualBtn');
+        if (downloadManualBtn) {
+            downloadManualBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Manual button clicked');
+                try {
+                    this.downloadUserManual();
+                } catch (error) {
+                    console.error('Error downloading manual:', error);
+                    alert('Error generating manual: ' + error.message);
+                }
+            });
+        } else {
+            console.error('downloadManualBtn not found in DOM');
+        }
+
         // Close modal when clicking outside
         shortcutsModal.addEventListener('click', (e) => {
             if (e.target === shortcutsModal) {
@@ -3713,6 +3731,684 @@ class FootballMatchCoder {
         } catch (error) {
             console.warn('Could not restore video from storage:', error);
         }
+    }
+
+    downloadUserManual() {
+        try {
+            console.log('Generating user manual...');
+            const manualHTML = this.generateUserManual();
+            console.log('Manual HTML generated, length:', manualHTML.length);
+            
+            // Create a blob URL for the HTML
+            const blob = new Blob([manualHTML], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            // Open in new window with print-friendly styling
+            const printWindow = window.open(url, '_blank');
+            
+            if (!printWindow) {
+                // Fallback: download HTML file
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Football-Match-Coder-User-Manual.html';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                alert('Popup blocked. HTML file downloaded instead. Open it and use Print → Save as PDF.');
+                return;
+            }
+            
+            // Wait for window to load, then show print dialog
+            printWindow.onload = () => {
+                setTimeout(() => {
+                    printWindow.print();
+                    // Clean up URL after a delay
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 1000);
+                }, 500);
+            };
+            
+            // Fallback if onload doesn't fire
+            setTimeout(() => {
+                if (printWindow.document.readyState === 'complete') {
+                    printWindow.print();
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 1000);
+                }
+            }, 1000);
+            
+            console.log('Manual opened in new window. Use Print → Save as PDF.');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            // Fallback to HTML download if PDF generation fails
+            try {
+                const manualHTML = this.generateUserManual();
+                const blob = new Blob([manualHTML], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Football-Match-Coder-User-Manual.html';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                alert('PDF generation failed. HTML version downloaded instead.');
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                alert('Error generating manual. Please check the console for details.');
+            }
+        }
+    }
+
+    generateUserManual() {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const modKey = isMac ? 'Cmd' : 'Ctrl';
+        
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Coder - User Manual</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #ffffff;
+            color: #1e293b;
+        }
+        h1 {
+            color: #22c55e;
+            border-bottom: 3px solid #22c55e;
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            color: #334155;
+            margin-top: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        h3 {
+            color: #475569;
+            margin-top: 1.5rem;
+        }
+        code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .keyboard-shortcut {
+            background: #1e293b;
+            color: #22c55e;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        li {
+            margin: 0.5rem 0;
+        }
+        .feature-box {
+            background: #f8fafc;
+            border-left: 4px solid #22c55e;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .tip {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚽ Football Match Coder - User Manual</h1>
+    
+    <p><strong>Version:</strong> 1.0<br>
+    <strong>Last Updated:</strong> ${new Date().toLocaleDateString()}</p>
+
+    <h2>Table of Contents</h2>
+    <ol>
+        <li><a href="#getting-started">Getting Started</a></li>
+        <li><a href="#video-playback">Video Playback</a></li>
+        <li><a href="#event-coding">Event Coding</a></li>
+        <li><a href="#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+        <li><a href="#lineup-management">Lineup Management</a></li>
+        <li><a href="#advanced-features">Advanced Features</a></li>
+        <li><a href="#data-export">Data Export</a></li>
+        <li><a href="#tips">Tips & Best Practices</a></li>
+    </ol>
+
+    <h2 id="getting-started">1. Getting Started</h2>
+    
+    <h3>Loading a Video</h3>
+    <ol>
+        <li>Click the <strong>"Load Video"</strong> button in the header</li>
+        <li>Select your football match video file (MP4/H.264 recommended)</li>
+        <li>The video will load and appear in the main video player</li>
+        <li>You can save the video in the app for quick access later using the <strong>"Save Video"</strong> button</li>
+    </ol>
+
+    <h3>Setting Up Your Session</h3>
+    <ol>
+        <li>Enter a <strong>Session Name</strong> (e.g., "Match 1 - Team A vs Team B")</li>
+        <li>Enter the <strong>Home Team</strong> name</li>
+        <li>Enter the <strong>Away Team</strong> name</li>
+        <li>All session data is automatically saved to your browser's local storage</li>
+    </ol>
+
+    <h3>Match Context</h3>
+    <p>Before coding events, set the current match context:</p>
+    <ul>
+        <li><strong>Half:</strong> Select which half you're in (1, 2, ET1, ET2)</li>
+        <li><strong>Minute:</strong> Enter the current minute of play</li>
+        <li><strong>Score:</strong> Set the current home and away scores</li>
+        <li>Use the <strong>"🔄 Sync"</strong> button to sync video time with match time</li>
+    </ul>
+
+    <h2 id="video-playback">2. Video Playback</h2>
+
+    <h3>Basic Controls</h3>
+    <ul>
+        <li><strong>Play/Pause:</strong> Click the play button or press <span class="keyboard-shortcut">Space</span></li>
+        <li><strong>Speed Control:</strong> Use the speed slider (0.25x to 2.0x) or buttons</li>
+        <li><strong>Seek:</strong> Click anywhere on the timeline to jump to that time</li>
+        <li><strong>Quick Seek:</strong> Use ⏪ (rewind 5s) or ⏩ (forward 5s) buttons</li>
+    </ul>
+
+    <h3>Frame-by-Frame Navigation</h3>
+    <ul>
+        <li>Use <span class="keyboard-shortcut">←</span> and <span class="keyboard-shortcut">→</span> arrow keys</li>
+        <li>Or use the frame navigation buttons</li>
+        <li>Video automatically pauses for precise frame-by-frame control</li>
+    </ul>
+
+    <h3>Event Timeline</h3>
+    <div class="feature-box">
+        <p><strong>Visual Timeline Features:</strong></p>
+        <ul>
+            <li>Color-coded event markers show all coded events</li>
+            <li>Click any event marker to jump to that timestamp</li>
+            <li>Zoom in/out using the zoom controls (+/- buttons)</li>
+            <li>Use <span class="keyboard-shortcut">${isMac ? 'Cmd' : 'Ctrl'}</span> + Mouse Wheel to zoom</li>
+            <li>Time marks show major intervals for easy navigation</li>
+        </ul>
+    </div>
+
+    <h2 id="event-coding">3. Event Coding</h2>
+
+    <h3>Event Types</h3>
+    <p>The app supports coding the following event types:</p>
+
+    <h4>Pass Events</h4>
+    <ul>
+        <li><strong>Pass Complete</strong> - Successful pass</li>
+        <li><strong>Pass Incomplete</strong> - Unsuccessful pass</li>
+        <li><strong>Key Pass</strong> - Pass leading to a shot</li>
+        <li><strong>Assist</strong> - Pass leading to a goal</li>
+    </ul>
+
+    <h4>Shot Events</h4>
+    <ul>
+        <li><strong>Shot On Target</strong> - Shot that would go in or is saved</li>
+        <li><strong>Shot Off Target</strong> - Shot that misses the goal</li>
+        <li><strong>Goal</strong> - Successful shot resulting in a goal</li>
+        <li><strong>Shot Blocked</strong> - Shot blocked by a defender</li>
+    </ul>
+
+    <h4>Defensive Events</h4>
+    <ul>
+        <li><strong>Tackle</strong> - Successful tackle</li>
+        <li><strong>Interception</strong> - Ball intercepted from opponent</li>
+        <li><strong>Clearance</strong> - Ball cleared from danger</li>
+        <li><strong>Block</strong> - Shot or pass blocked</li>
+    </ul>
+
+    <h4>Dribble Events</h4>
+    <ul>
+        <li><strong>Dribble Success</strong> - Successful dribble past opponent</li>
+        <li><strong>Dribble Fail</strong> - Unsuccessful dribble attempt</li>
+        <li><strong>Take-On</strong> - Attempt to beat an opponent</li>
+    </ul>
+
+    <h4>Fouls & Cards</h4>
+    <ul>
+        <li><strong>Foul</strong> - Foul committed</li>
+        <li><strong>Yellow Card</strong> - Yellow card shown</li>
+        <li><strong>Red Card</strong> - Red card shown</li>
+    </ul>
+
+    <h4>Other Events</h4>
+    <ul>
+        <li><strong>Corner</strong> - Corner kick</li>
+        <li><strong>Free Kick</strong> - Free kick awarded</li>
+        <li><strong>Throw-In</strong> - Throw-in</li>
+        <li><strong>Offside</strong> - Offside call</li>
+        <li><strong>Substitution</strong> - Player substitution</li>
+    </ul>
+
+    <h3>Recording an Event</h3>
+    <ol>
+        <li>Play or navigate to the moment in the video where the event occurs</li>
+        <li>Select the <strong>Team</strong> (Home or Away)</li>
+        <li>Select the <strong>Player</strong> from the dropdown (if lineups are loaded)</li>
+        <li>Select the <strong>Zone</strong> where the event occurred (optional)</li>
+        <li>Add any <strong>Notes</strong> (optional)</li>
+        <li>Click the event button or use the keyboard shortcut</li>
+        <li>The event is automatically recorded with the current timestamp</li>
+    </ol>
+
+    <h3>Event Information</h3>
+    <p>Each event records:</p>
+    <ul>
+        <li>Timestamp (video time)</li>
+        <li>Match time (half and minute)</li>
+        <li>Event type</li>
+        <li>Team and player</li>
+        <li>Zone location</li>
+        <li>Score at the time of the event</li>
+        <li>Any notes you added</li>
+        <li>Event count (shows how many times this event type has been coded)</li>
+    </ul>
+
+    <h2 id="keyboard-shortcuts">4. Keyboard Shortcuts</h2>
+
+    <p>Keyboard shortcuts make coding much faster. All shortcuts are shown on the event buttons.</p>
+
+    <h3>Video Controls</h3>
+    <table>
+        <tr>
+            <th>Shortcut</th>
+            <th>Action</th>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">Space</span></td>
+            <td>Play/Pause</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">←</span> / <span class="keyboard-shortcut">→</span></td>
+            <td>Previous/Next frame</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">J</span></td>
+            <td>Rewind 5 seconds</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">L</span></td>
+            <td>Forward 5 seconds</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">K</span></td>
+            <td>Pause</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">M</span></td>
+            <td>Mute/Unmute</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">${modKey} + Z</span></td>
+            <td>Undo last action</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">${modKey} + Shift + Z</span></td>
+            <td>Redo action</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">Space (hold)</span></td>
+            <td>Play at 2x speed while held</td>
+        </tr>
+    </table>
+
+    <h3>Event Coding Shortcuts</h3>
+    <table>
+        <tr>
+            <th>Shortcut</th>
+            <th>Event</th>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">P</span></td>
+            <td>Pass Complete</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">I</span></td>
+            <td>Pass Incomplete</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">Shift + K</span></td>
+            <td>Key Pass</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">A</span></td>
+            <td>Assist</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">S</span></td>
+            <td>Shot On Target</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">O</span></td>
+            <td>Shot Off Target</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">G</span></td>
+            <td>Goal</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">B</span></td>
+            <td>Shot Blocked</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">T</span></td>
+            <td>Tackle</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">N</span></td>
+            <td>Interception</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">C</span></td>
+            <td>Clearance</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">Shift + L</span></td>
+            <td>Block</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">D</span></td>
+            <td>Dribble Success</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">F</span></td>
+            <td>Dribble Fail</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">W</span></td>
+            <td>Take-On</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">U</span></td>
+            <td>Foul</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">Y</span></td>
+            <td>Yellow Card</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">Shift + R</span></td>
+            <td>Red Card</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">1</span></td>
+            <td>Corner</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">2</span></td>
+            <td>Free Kick</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">3</span></td>
+            <td>Throw-In</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">4</span></td>
+            <td>Offside</td>
+        </tr>
+        <tr>
+            <td><span class="keyboard-shortcut">5</span></td>
+            <td>Substitution</td>
+        </tr>
+    </table>
+
+    <h2 id="lineup-management">5. Lineup Management</h2>
+
+    <h3>Loading Lineups</h3>
+    <p>You can load player lineups in three ways:</p>
+
+    <h4>From File (CSV or Excel)</h4>
+    <ol>
+        <li>Click <strong>"Load from File"</strong></li>
+        <li>Select a CSV or Excel file</li>
+        <li>The file should have columns for: Player Name, Number, and Team (Home/Away)</li>
+        <li>Players will be automatically loaded into the dropdown menus</li>
+    </ol>
+
+    <h4>From URL</h4>
+    <ol>
+        <li>Paste a URL containing lineup data</li>
+        <li>Click <strong>"Load from URL"</strong></li>
+        <li>Supports ACC boxscore format and other common formats</li>
+        <li>The app will automatically parse and load players</li>
+    </ol>
+
+    <h3>Using Player Dropdowns</h3>
+    <ul>
+        <li>Once lineups are loaded, use the <strong>Home Team</strong> and <strong>Away Team</strong> dropdowns</li>
+        <li>Select a player before coding an event to automatically assign them</li>
+        <li>Player names are cleaned automatically (duplicate numbers removed)</li>
+    </ol>
+
+    <h2 id="advanced-features">6. Advanced Features</h2>
+
+    <h3>Button Presets</h3>
+    <div class="feature-box">
+        <p>Customize which event buttons are visible:</p>
+        <ol>
+            <li>Click <strong>"Button Presets ▼"</strong> in the header</li>
+            <li>Check/uncheck event types to show or hide them</li>
+            <li>Enter a preset name and click <strong>"Save Current"</strong></li>
+            <li>Load saved presets anytime to quickly switch between different button configurations</li>
+        </ol>
+    </div>
+
+    <h3>Event Templates</h3>
+    <div class="feature-box">
+        <p>Save and reuse coding sequences:</p>
+        <ol>
+            <li>Code a sequence of events</li>
+            <li>Click <strong>"Templates ▼"</strong> in the header</li>
+            <li>Enter a template name</li>
+            <li>Click <strong>"Save Current Sequence"</strong></li>
+            <li>Apply templates later to quickly code common event patterns</li>
+        </ol>
+    </div>
+
+    <h3>Tags System</h3>
+    <div class="feature-box">
+        <p>Organize events with custom tags:</p>
+        <ul>
+            <li>Add tags to events for better organization</li>
+            <li>Filter events by tags</li>
+            <li>Create tag presets for common tagging patterns</li>
+        </ul>
+    </div>
+
+    <h3>Event Filtering</h3>
+    <div class="feature-box">
+        <p>Filter events by multiple criteria:</p>
+        <ul>
+            <li><strong>Search:</strong> Search event notes or player names</li>
+            <li><strong>Event Types:</strong> Filter by specific event types</li>
+            <li><strong>Team:</strong> Show only home or away team events</li>
+            <li><strong>Player:</strong> Filter by specific player</li>
+            <li><strong>Tags:</strong> Filter by tags</li>
+            <li><strong>Time Range:</strong> Filter events within a specific time range</li>
+        </ul>
+    </div>
+
+    <h3>Undo/Redo</h3>
+    <ul>
+        <li>Use <span class="keyboard-shortcut">${modKey} + Z</span> to undo the last action</li>
+        <li>Use <span class="keyboard-shortcut">${modKey} + Shift + Z</span> to redo</li>
+        <li>Supports up to 100 actions in history</li>
+    </ul>
+
+    <h3>Event Counters</h3>
+    <ul>
+        <li>Each event button shows a counter in the top-left corner</li>
+        <li>Counters show how many times each event type has been coded</li>
+        <li>Events in the log also show their count number for easy matching</li>
+    </ul>
+
+    <h3>Resizable Panels</h3>
+    <ul>
+        <li>Drag the border between video player and coding panel to resize</li>
+        <li>Drag the top of the event log to adjust its height</li>
+        <li>All panel sizes are saved and restored automatically</li>
+    </ul>
+
+    <h3>Match Time Sync</h3>
+    <ul>
+        <li>Click <strong>"🔄 Sync"</strong> to set the match start offset</li>
+        <li>Enter the video timestamp where the match actually begins</li>
+        <li>The app will automatically calculate and display the correct half and minute</li>
+    </ul>
+
+    <h2 id="data-export">7. Data Export</h2>
+
+    <h3>Export Formats</h3>
+    <p>You can export your coded data in multiple formats:</p>
+
+    <h4>CSV Export</h4>
+    <ul>
+        <li>Click <strong>"Export Data"</strong> → <strong>"CSV"</strong></li>
+        <li>Perfect for analysis in Excel, Google Sheets, or data analysis tools</li>
+        <li>Includes all event data: timestamp, time, half, minute, event type, team, player, zone, scores, notes</li>
+    </ul>
+
+    <h4>JSON Export</h4>
+    <ul>
+        <li>Click <strong>"Export Data"</strong> → <strong>"JSON"</strong></li>
+        <li>Full session data including events, lineups, and session info</li>
+        <li>Can be imported back into the app using <strong>"Load Session"</strong></li>
+    </ul>
+
+    <h4>XML Export</h4>
+    <ul>
+        <li>Click <strong>"Export Data"</strong> → <strong>"XML"</strong></li>
+        <li>Structured XML format for integration with other systems</li>
+    </ul>
+
+    <h4>JSON Lines Export</h4>
+    <ul>
+        <li>Click <strong>"Export Data"</strong> → <strong>"JSON Lines"</strong></li>
+        <li>One JSON object per line, useful for streaming or processing large datasets</li>
+    </ul>
+
+    <h3>Saving Sessions</h3>
+    <ul>
+        <li>Click <strong>"Save Session"</strong> to save your complete session</li>
+        <li>Sessions are saved as JSON files</li>
+        <li>Load saved sessions later to continue coding or review data</li>
+        <li>All session data is also automatically saved to browser local storage</li>
+    </ul>
+
+    <h2 id="tips">8. Tips & Best Practices</h2>
+
+    <div class="tip">
+        <h3>💡 Efficiency Tips</h3>
+        <ul>
+            <li><strong>Use keyboard shortcuts:</strong> They're much faster than clicking buttons</li>
+            <li><strong>Load lineups first:</strong> Makes player selection much quicker</li>
+            <li><strong>Create button presets:</strong> Hide unused event types to reduce clutter</li>
+            <li><strong>Use the timeline:</strong> Click event markers to quickly jump to key moments</li>
+            <li><strong>Zoom the timeline:</strong> Use zoom controls to focus on specific periods</li>
+            <li><strong>Save frequently:</strong> Export your data regularly to avoid data loss</li>
+        </ul>
+    </div>
+
+    <div class="tip">
+        <h3>📊 Coding Best Practices</h3>
+        <ul>
+            <li><strong>Be consistent:</strong> Use the same definitions for events throughout</li>
+            <li><strong>Add notes:</strong> Notes help provide context when analyzing data later</li>
+            <li><strong>Use tags:</strong> Tag events to group related actions (e.g., "counter-attack", "set-piece")</li>
+            <li><strong>Sync match time:</strong> Use the sync feature to ensure accurate match time tracking</li>
+            <li><strong>Review events:</strong> Use the event log to review and verify coded events</li>
+            <li><strong>Filter strategically:</strong> Use filters to focus on specific aspects of the match</li>
+        </ul>
+    </div>
+
+    <div class="tip">
+        <h3>🎥 Video Tips</h3>
+        <ul>
+            <li><strong>Video format:</strong> MP4 with H.264 codec works best across all browsers</li>
+            <li><strong>Frame-by-frame:</strong> Use arrow keys for precise event timing</li>
+            <li><strong>Speed control:</strong> Use slower speeds (0.25x, 0.5x) for detailed analysis</li>
+            <li><strong>Save videos:</strong> Save videos in the app to avoid reloading them</li>
+            <li><strong>Timeline navigation:</strong> Use the timeline to quickly jump between events</li>
+        </ul>
+    </div>
+
+    <h2>Browser Compatibility</h2>
+    <p>Football Match Coder works best in modern browsers:</p>
+    <ul>
+        <li>Google Chrome (recommended)</li>
+        <li>Mozilla Firefox</li>
+        <li>Microsoft Edge</li>
+        <li>Apple Safari</li>
+    </ul>
+    <p>Video format support depends on browser codecs. MP4/H.264 is recommended for best compatibility.</p>
+
+    <h2>Data Storage</h2>
+    <p>All session data is automatically saved to your browser's local storage. This means:</p>
+    <ul>
+        <li>Your data persists between browser sessions</li>
+        <li>Data is stored locally on your device (not uploaded to any server)</li>
+        <li>To clear data, use browser developer tools or click "Clear Log"</li>
+        <li>For backup, regularly export your data using the export functions</li>
+    </ul>
+
+    <h2>Support & Feedback</h2>
+    <p>For questions, feedback, or issues, please contact:</p>
+    <p><strong>Email:</strong> <a href="mailto:daniellevitt32@gmail.com">daniellevitt32@gmail.com</a></p>
+
+    <div class="footer">
+        <p>Football Match Coder - Created by Daniel Levitt</p>
+        <p>This manual was generated on ${new Date().toLocaleString()}</p>
+    </div>
+</body>
+</html>`;
     }
 }
 
