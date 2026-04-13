@@ -21,7 +21,7 @@ body {
 /* Header */
 .header {
     background: #1e293b;
-    padding: 1rem 1.5rem;
+    padding: 0.6rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -36,7 +36,7 @@ body {
 }
 
 .header-left h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #22c55e;
 }
@@ -48,13 +48,13 @@ body {
 }
 
 .session-input {
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.6rem;
     background: #334155;
     border: 1px solid #475569;
-    border-radius: 6px;
+    border-radius: 5px;
     color: #e2e8f0;
-    font-size: 0.9rem;
-    width: 150px;
+    font-size: 0.82rem;
+    width: 125px;
 }
 
 .session-input:focus {
@@ -64,15 +64,21 @@ body {
 
 .header-right {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     align-items: center;
 }
 
-.export-dropdown, .preset-dropdown, .template-dropdown {
+.header .btn {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    border-radius: 5px;
+}
+
+.export-dropdown, .preset-dropdown, .template-dropdown, .save-dropdown {
     position: relative;
 }
 
-.export-menu {
+.export-menu, .save-menu {
     display: none;
     position: absolute;
     top: 100%;
@@ -86,7 +92,7 @@ body {
     min-width: 180px;
 }
 
-.export-option {
+.export-option, .save-option {
     display: block;
     width: 100%;
     padding: 0.6rem 1rem;
@@ -99,15 +105,15 @@ body {
     transition: background 0.2s;
 }
 
-.export-option:hover {
+.export-option:hover, .save-option:hover {
     background: #334155;
 }
 
-.export-option:first-child {
+.export-option:first-child, .save-option:first-child {
     border-radius: 6px 6px 0 0;
 }
 
-.export-option:last-child {
+.export-option:last-child, .save-option:last-child {
     border-radius: 0 0 6px 6px;
 }
 
@@ -215,7 +221,7 @@ body {
     left: 0;
     right: 0;
     background: rgba(0, 0, 0, 0.9);
-    padding: 1rem;
+    padding: 0.65rem;
     z-index: 20;
     width: 100%;
     box-sizing: border-box;
@@ -289,7 +295,7 @@ body {
 
 .timeline-track {
     position: relative;
-    height: 40px;
+    height: 26px;
     background: #334155;
     border-radius: 4px;
     cursor: pointer;
@@ -300,7 +306,7 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    height: 8px;
+    height: 6px;
     background: #22c55e;
     border-radius: 4px 0 0 4px;
     width: 0%;
@@ -310,10 +316,10 @@ body {
 
 .timeline-handle {
     position: absolute;
-    top: 4px;
+    top: 2px;
     transform: translateX(-50%);
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     background: #22c55e;
     border: 2px solid white;
     border-radius: 50%;
@@ -333,10 +339,10 @@ body {
 
 .timeline-events {
     position: absolute;
-    top: 8px;
+    top: 6px;
     left: 0;
     right: 0;
-    height: 32px;
+    height: 20px;
     pointer-events: auto;
 }
 
@@ -411,7 +417,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 8px;
+    height: 6px;
     pointer-events: none;
     z-index: 1;
 }
@@ -445,7 +451,7 @@ body {
     color: #e2e8f0;
     font-size: 0.85rem;
     font-family: 'Courier New', monospace;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 }
 
 .video-controls-main {
@@ -572,16 +578,17 @@ body {
 }
 
 .video-controls {
-    padding: 1rem;
+    padding: 0.7rem 1rem;
     background: #1e293b;
     border-top: 1px solid #334155;
 }
 
-.playback-controls {
+.playback-row {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
 }
 
 .control-btn {
@@ -610,6 +617,9 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    margin-left: 0.25rem;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .speed-control label {
@@ -619,13 +629,88 @@ body {
 
 #speedSlider {
     flex: 1;
-    max-width: 200px;
+    min-width: 140px;
+    max-width: 240px;
 }
 
 #speedValue {
     min-width: 40px;
     font-weight: 600;
     color: #22c55e;
+}
+
+/* Compact UI mode */
+body.compact-ui .header {
+    padding: 0.45rem 0.75rem;
+}
+
+body.compact-ui .header-left h1 {
+    font-size: 1.1rem;
+}
+
+body.compact-ui .session-info {
+    display: none;
+}
+
+body.compact-ui .header-right {
+    gap: 0.35rem;
+}
+
+body.compact-ui .header .btn {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.76rem;
+}
+
+body.compact-ui .main-content {
+    gap: 0.6rem;
+    padding: 0.6rem;
+}
+
+body.compact-ui .coding-panel {
+    width: 340px;
+    padding: 0.7rem;
+}
+
+body.compact-ui .section {
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.9rem;
+}
+
+body.compact-ui .section h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.55rem;
+}
+
+body.compact-ui .event-buttons {
+    gap: 0.4rem;
+}
+
+body.compact-ui .event-btn {
+    padding: 0.55rem 0.6rem;
+    font-size: 0.84rem;
+    min-height: 38px;
+}
+
+body.compact-ui .video-controls {
+    padding: 0.45rem 0.75rem;
+}
+
+body.compact-ui .events-log {
+    height: 130px;
+}
+
+body.compact-ui .log-header {
+    padding: 0.45rem 0.75rem;
+}
+
+body.compact-ui .event-item {
+    padding: 0.45rem;
+    margin-bottom: 0.35rem;
+}
+
+body.compact-ui .tag-suggestions {
+    max-height: 28px;
+    overflow: hidden;
 }
 
 /* Coding Panel */
@@ -706,6 +791,68 @@ body {
     font-family: inherit;
 }
 
+.pitch-locator {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 1.2;
+    background: linear-gradient(180deg, #1f7a3f 0%, #166534 100%);
+    border: 2px solid #86efac;
+    border-radius: 8px;
+    cursor: crosshair;
+    overflow: hidden;
+}
+
+.pitch-halfway-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    transform: translateX(-50%);
+}
+
+.pitch-center-circle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22%;
+    aspect-ratio: 1 / 1;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.pitch-box {
+    position: absolute;
+    top: 22%;
+    width: 13%;
+    height: 56%;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.pitch-box-left {
+    left: 0;
+    border-left: none;
+}
+
+.pitch-box-right {
+    right: 0;
+    border-right: none;
+}
+
+.pitch-marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #f97316;
+    border: 2px solid white;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.7);
+    pointer-events: none;
+}
+
 .event-buttons {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -782,6 +929,30 @@ body {
 
 .event-btn.other-btn:hover {
     background: rgba(6, 182, 212, 0.2);
+}
+
+.template-tag-btn {
+    padding: 0.65rem 0.6rem;
+    background: rgba(51, 65, 85, 0.55);
+    border: 1px solid #475569;
+    border-radius: 6px;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.template-tag-btn:hover {
+    background: rgba(71, 85, 105, 0.8);
+    border-color: #22c55e;
+}
+
+.template-tag-btn.active {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: #22c55e;
+    color: #bbf7d0;
 }
 
 .key-hint {
@@ -904,6 +1075,11 @@ body {
 
 .event-item.other {
     border-left-color: #06b6d4;
+}
+
+.event-item.event-item-selected {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.6) inset;
+    background: #3a4b63;
 }
 
 .event-info {

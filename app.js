@@ -40,9 +40,22 @@ class FootballMatchCoder {
         // Templates
         this.templates = {};
         this.templateSequence = [];
+        this.metricaTemplates = {};
+        this.customEventDisplayNames = {};
+        this.activeCustomTemplate = null;
+        this.activeTemplateParentEventId = null;
+        this.selectedEventForTagEditing = null;
+        this.currentPitchLocation = null;
+        this.pitchLocationExplicitlySet = false;
+        this.attackDirection = 'left-to-right';
+        this.firstHalfAttackDirection = 'left-to-right';
         
         // Match time sync
         this.matchStartOffset = 0;
+        this.halfStartOffsets = {
+            first: null,
+            second: null
+        };
         
         // Video storage
         this.currentVideoFile = null;
@@ -113,6 +126,7 @@ class FootballMatchCoder {
         });
         
         this.currentPreset = { ...this.defaultPreset };
+        this.metricaTemplates = this.buildMetricaTemplates();
         
         this.init();
     }
@@ -120,9 +134,13 @@ class FootballMatchCoder {
     init() {
         this.setupEventListeners();
         this.setupKeyboardShortcuts();
+        this.loadCompactMode();
+        this.loadHalfStartOffsets();
         this.loadSessionFromStorage();
         this.updateEventsList();
         this.updateMatchInfo();
+        this.updateHalfStartStatus();
+        this.updatePitchLocatorUI();
     }
 
     setupEventListeners() {
@@ -131,12 +149,30 @@ class FootballMatchCoder {
             document.getElementById('videoFileInput').click();
         });
 
+        const youtubeMp4Btn = document.getElementById('youtubeMp4Btn');
+        if (youtubeMp4Btn) {
+            youtubeMp4Btn.addEventListener('click', () => this.importYoutubeToMp4());
+        }
+
         document.getElementById('videoFileInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (file) {
                 await this.loadVideoFile(file);
             }
         });
+
+        const loadSessionBtn = document.getElementById('loadSessionBtn');
+        const loadSessionInput = document.getElementById('loadSessionInput');
+        if (loadSessionBtn && loadSessionInput) {
+            loadSessionBtn.addEventListener('click', () => loadSessionInput.click());
+            loadSessionInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    await this.loadSessionFromFile(file);
+                    loadSessionInput.value = '';
+                }
+            });
+        }
 
         // Save video button
         document.getElementById('saveVideoBtn').addEventListener('click', () => {
@@ -145,12 +181,14 @@ class FootballMatchCoder {
 
         // Video controls
         document.getElementById('playPause').addEventListener('click', () => this.togglePlayPause());
-        document.getElementById('playPauseMain').addEventListener('click', () => this.togglePlayPause());
+        document.getElementById('muteBtn').addEventListener('click', () => this.toggleMute());
         document.getElementById('rewind').addEventListener('click', () => this.seek(-5));
         document.getElementById('forward').addEventListener('click', () => this.seek(5));
-        document.getElementById('slowMotion').addEventListener('click', () => this.setSpeed(0.5));
-        document.getElementById('normalSpeed').addEventListener('click', () => this.setSpeed(1.0));
-        document.getElementById('fastForward').addEventListener('click', () => this.setSpeed(2.0));
+
+        const playPauseMainBtn = document.getElementById('playPauseMain');
+        if (playPauseMainBtn) {
+            playPauseMainBtn.addEventListener('click', () => this.togglePlayPause());
+        }
 
         // Frame controls
         const prevFrameBtn = document.getElementById('prevFrame');
@@ -172,10 +210,13 @@ class FootballMatchCoder {
             });
         }
         
-        // Sync time button
-        document.getElementById('syncTimeBtn').addEventListener('click', () => {
-            this.syncMatchTimeWithVideo();
-        });
+        // Sync time button (optional in compact layouts)
+        const syncTimeBtn = document.getElementById('syncTimeBtn');
+        if (syncTimeBtn) {
+            syncTimeBtn.addEventListener('click', () => {
+                this.syncMatchTimeWithVideo();
+            });
+        }
 
         // Speed slider
         const speedSlider = document.getElementById('speedSlider');
@@ -210,6 +251,17 @@ class FootballMatchCoder {
         const codingPanel = document.querySelector('.coding-panel');
         if (codingPanel) {
             codingPanel.addEventListener('click', (e) => {
+                const tagBtn = e.target.closest('.template-tag-btn');
+                if (tagBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tagLabel = tagBtn.getAttribute('data-tag-label');
+                    if (tagLabel) {
+                        this.toggleTemplateTag(tagLabel);
+                    }
+                    return;
+                }
+
                 const btn = e.target.closest('.event-btn');
                 if (btn) {
                     e.preventDefault();
@@ -222,9 +274,29 @@ class FootballMatchCoder {
             });
         }
 
-        // Save and export
-        document.getElementById('saveBtn').addEventListener('click', () => this.saveSession());
-        
+        // Save dropdown
+        const saveBtn = document.getElementById('saveBtn');
+        const saveMenu = document.getElementById('saveMenu');
+        saveBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            saveMenu.style.display = saveMenu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.querySelectorAll('.save-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const format = btn.getAttribute('data-save-format');
+                if (format === 'all') {
+                    this.saveAllFormats();
+                } else if (format === 'session-json') {
+                    this.saveSession();
+                } else {
+                    this.exportData(format);
+                }
+                saveMenu.style.display = 'none';
+            });
+        });
+
         // Export dropdown
         const exportBtn = document.getElementById('exportBtn');
         const exportMenu = document.getElementById('exportMenu');
@@ -238,13 +310,18 @@ class FootballMatchCoder {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const format = btn.getAttribute('data-format');
-                this.exportData(format);
+                if (format === 'all') {
+                    this.exportAllFormats();
+                } else {
+                    this.exportData(format);
+                }
                 exportMenu.style.display = 'none';
             });
         });
         
         // Close dropdown when clicking outside
         document.addEventListener('click', () => {
+            saveMenu.style.display = 'none';
             exportMenu.style.display = 'none';
         });
 
@@ -274,11 +351,27 @@ class FootballMatchCoder {
             this.saveToStorage();
         });
 
+        const compactModeBtn = document.getElementById('compactModeBtn');
+        if (compactModeBtn) {
+            compactModeBtn.addEventListener('click', () => this.toggleCompactMode());
+        }
+
         // Match info updates
         document.getElementById('half').addEventListener('change', () => this.updateMatchInfo());
         document.getElementById('minute').addEventListener('input', () => this.updateMatchInfo());
         document.getElementById('homeScore').addEventListener('input', () => this.updateMatchInfo());
         document.getElementById('awayScore').addEventListener('input', () => this.updateMatchInfo());
+        this.setupPitchLocator();
+
+        const markFirstHalfStartBtn = document.getElementById('markFirstHalfStartBtn');
+        if (markFirstHalfStartBtn) {
+            markFirstHalfStartBtn.addEventListener('click', () => this.markHalfStart('first'));
+        }
+
+        const markSecondHalfStartBtn = document.getElementById('markSecondHalfStartBtn');
+        if (markSecondHalfStartBtn) {
+            markSecondHalfStartBtn.addEventListener('click', () => this.markHalfStart('second'));
+        }
 
         // Lineup loading
         document.getElementById('loadLineupFileBtn').addEventListener('click', () => {
@@ -347,6 +440,74 @@ class FootballMatchCoder {
         
         // Try to restore video from storage
         this.restoreVideoFromStorage();
+    }
+
+    toggleCompactMode() {
+        const enabled = !document.body.classList.contains('compact-ui');
+        this.applyCompactMode(enabled);
+        try {
+            localStorage.setItem('footballMatchCoder_compactUI', enabled ? '1' : '0');
+        } catch (e) {
+            console.warn('Could not save compact mode preference:', e);
+        }
+    }
+
+    loadCompactMode() {
+        try {
+            const saved = localStorage.getItem('footballMatchCoder_compactUI');
+            this.applyCompactMode(saved === '1');
+        } catch (e) {
+            this.applyCompactMode(false);
+        }
+    }
+
+    applyCompactMode(enabled) {
+        const compactModeBtn = document.getElementById('compactModeBtn');
+        document.body.classList.toggle('compact-ui', enabled);
+        if (compactModeBtn) {
+            compactModeBtn.textContent = enabled ? 'Standard UI' : 'Compact UI';
+        }
+    }
+
+    async importYoutubeToMp4() {
+        const url = prompt('Paste the YouTube URL to convert to MP4:');
+        if (!url) return;
+
+        const filenameInput = prompt('Optional output filename (without extension):', 'match-video');
+        const filename = (filenameInput || 'match-video').trim().replace(/[^a-zA-Z0-9-_]/g, '_');
+        const endpoint = 'http://127.0.0.1:8765/download';
+
+        try {
+            alert('Starting download and conversion. This can take a minute...');
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, filename })
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'Download failed');
+            }
+
+            const videoUrl = result.videoUrl;
+            this.video.src = videoUrl;
+            this.video.load();
+            this.videoFileName = result.filename || `${filename}.mp4`;
+            this.currentSession.videoFileName = this.videoFileName;
+            this.saveToStorage();
+            document.getElementById('saveVideoBtn').style.display = 'inline-block';
+
+            alert(`Video imported successfully: ${this.videoFileName}`);
+        } catch (error) {
+            const installNote =
+                'Could not reach local YouTube backend.\n\n' +
+                'Start it from Terminal in the app folder:\n' +
+                'python3 youtube_backend.py\n\n' +
+                'Then run YouTube -> MP4 again.\n\n' +
+                `Details: ${error.message}`;
+            alert(installNote);
+        }
     }
 
     setupVideoResizer() {
@@ -528,34 +689,234 @@ class FootballMatchCoder {
         }
     }
 
-    autoUpdateMatchTime() {
-        // Only auto-update if match start offset is set
-        if (this.matchStartOffset === undefined || this.matchStartOffset === 0) {
+    saveHalfStartOffsets() {
+        try {
+            localStorage.setItem('footballMatchCoder_halfStartOffsets', JSON.stringify(this.halfStartOffsets));
+        } catch (e) {
+            console.warn('Could not save half start offsets:', e);
+        }
+    }
+
+    loadHalfStartOffsets() {
+        try {
+            const saved = localStorage.getItem('footballMatchCoder_halfStartOffsets');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                this.halfStartOffsets = {
+                    first: typeof parsed.first === 'number' ? parsed.first : null,
+                    second: typeof parsed.second === 'number' ? parsed.second : null
+                };
+            }
+        } catch (e) {
+            console.warn('Could not load half start offsets:', e);
+        }
+    }
+
+    markHalfStart(halfKey) {
+        const currentTime = this.video.currentTime || 0;
+
+        if (halfKey === 'second' && this.halfStartOffsets.first === null) {
+            alert('Mark 1st Half Start before marking 2nd Half Start.');
             return;
         }
 
+        if (halfKey === 'second' && this.halfStartOffsets.first !== null && currentTime <= this.halfStartOffsets.first) {
+            alert('2nd Half Start must be after 1st Half Start.');
+            return;
+        }
+
+        this.halfStartOffsets[halfKey] = currentTime;
+
+        if (halfKey === 'first') {
+            this.firstHalfAttackDirection = this.attackDirection;
+            localStorage.setItem('footballMatchCoder_firstHalfAttackDirection', this.firstHalfAttackDirection);
+        }
+
+        if (halfKey === 'second') {
+            this.attackDirection = this.firstHalfAttackDirection === 'left-to-right' ? 'right-to-left' : 'left-to-right';
+            localStorage.setItem('footballMatchCoder_attackDirection', this.attackDirection);
+            const attackDirectionSelect = document.getElementById('attackDirection');
+            if (attackDirectionSelect) {
+                attackDirectionSelect.value = this.attackDirection;
+            }
+        }
+
+        this.saveHalfStartOffsets();
+        this.updateHalfStartStatus();
+        this.autoUpdateMatchTime();
+
+        const halfLabel = halfKey === 'first' ? '1st' : '2nd';
+        alert(`${halfLabel} Half Start marked at ${this.formatTime(currentTime)}.`);
+    }
+
+    updateHalfStartStatus() {
+        const statusEl = document.getElementById('halfStartStatus');
+        if (!statusEl) return;
+
+        const first = this.halfStartOffsets.first;
+        const second = this.halfStartOffsets.second;
+
+        if (first === null && second === null) {
+            statusEl.style.display = 'none';
+            return;
+        }
+
+        const firstText = first !== null ? this.formatTime(first) : 'not set';
+        const secondText = second !== null ? this.formatTime(second) : 'not set';
+        statusEl.style.display = 'block';
+        statusEl.className = 'lineup-status success';
+        statusEl.textContent = `1st Half: ${firstText} | 2nd Half: ${secondText}`;
+    }
+
+    setupPitchLocator() {
+        const pitch = document.getElementById('pitchLocator');
+        const marker = document.getElementById('pitchMarker');
+        const coordsText = document.getElementById('pitchCoordsText');
+        const clearBtn = document.getElementById('clearPitchPointBtn');
+        const attackDirectionSelect = document.getElementById('attackDirection');
+
+        if (!pitch || !marker || !coordsText || !clearBtn) return;
+
+        if (attackDirectionSelect) {
+            const savedDirection = localStorage.getItem('footballMatchCoder_attackDirection');
+            if (savedDirection === 'right-to-left' || savedDirection === 'left-to-right') {
+                this.attackDirection = savedDirection;
+            }
+            const savedFirstHalfDirection = localStorage.getItem('footballMatchCoder_firstHalfAttackDirection');
+            if (savedFirstHalfDirection === 'right-to-left' || savedFirstHalfDirection === 'left-to-right') {
+                this.firstHalfAttackDirection = savedFirstHalfDirection;
+            } else {
+                this.firstHalfAttackDirection = this.attackDirection;
+            }
+            attackDirectionSelect.value = this.attackDirection;
+            attackDirectionSelect.addEventListener('change', () => {
+                this.attackDirection = attackDirectionSelect.value;
+                localStorage.setItem('footballMatchCoder_attackDirection', this.attackDirection);
+                if (this.halfStartOffsets.first === null) {
+                    this.firstHalfAttackDirection = this.attackDirection;
+                    localStorage.setItem('footballMatchCoder_firstHalfAttackDirection', this.firstHalfAttackDirection);
+                }
+            });
+        }
+
+        pitch.addEventListener('click', (e) => {
+            const rect = pitch.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            this.setPitchLocation(x, y);
+        });
+
+        clearBtn.addEventListener('click', () => this.clearPitchLocation());
+    }
+
+    setPitchLocation(x, y) {
+        const clampedX = Math.max(0, Math.min(100, x));
+        const clampedY = Math.max(0, Math.min(100, y));
+        const nextLocation = {
+            x: Number(clampedX.toFixed(1)),
+            y: Number(clampedY.toFixed(1))
+        };
+
+        // If user selected a past event for editing, update that event directly.
+        if (this.selectedEventForTagEditing) {
+            const targetEvent = this.events.find(event => event.id === this.selectedEventForTagEditing);
+            if (targetEvent) {
+                const zones = this.getPitchZones(nextLocation.x, nextLocation.y);
+                targetEvent.pitchX = nextLocation.x;
+                targetEvent.pitchY = nextLocation.y;
+                targetEvent.pitchDepth = zones.depth;
+                targetEvent.pitchWidth = zones.width;
+                this.currentPitchLocation = { ...nextLocation };
+                this.pitchLocationExplicitlySet = false;
+                this.updatePitchLocatorUI();
+                this.updateEventsList();
+                this.saveToStorage();
+                return;
+            }
+        }
+
+        this.currentPitchLocation = nextLocation;
+        this.pitchLocationExplicitlySet = true;
+        this.updatePitchLocatorUI();
+    }
+
+    getPitchZones(x, y) {
+        const orientedX = this.attackDirection === 'right-to-left' ? (100 - x) : x;
+        let depth = 'Central Third';
+        if (orientedX < 33.34) depth = 'Defensive Third';
+        else if (orientedX > 66.66) depth = 'Attacking Third';
+
+        let width = 'Central';
+        if (y < 33.34) width = 'Right';
+        else if (y > 66.66) width = 'Left';
+
+        return { depth, width };
+    }
+
+    clearPitchLocation() {
+        this.currentPitchLocation = null;
+        this.pitchLocationExplicitlySet = false;
+        this.updatePitchLocatorUI();
+    }
+
+    updatePitchLocatorUI() {
+        const marker = document.getElementById('pitchMarker');
+        const coordsText = document.getElementById('pitchCoordsText');
+        if (!marker || !coordsText) return;
+
+        if (!this.currentPitchLocation) {
+            marker.style.display = 'none';
+            coordsText.textContent = 'No pitch point selected';
+            return;
+        }
+
+        marker.style.display = 'block';
+        marker.style.left = `${this.currentPitchLocation.x}%`;
+        marker.style.top = `${this.currentPitchLocation.y}%`;
+        coordsText.textContent = `Pitch: X ${this.currentPitchLocation.x}, Y ${this.currentPitchLocation.y}`;
+    }
+
+    autoUpdateMatchTime() {
+        const firstStart = this.halfStartOffsets.first;
+        const secondStart = this.halfStartOffsets.second;
         const videoTime = this.video.currentTime;
-        const matchTime = videoTime - this.matchStartOffset;
-        
-        if (matchTime < 0) return; // Before match start
-        
-        // Calculate half and minute
-        const halfLength = 45 * 60; // 45 minutes in seconds
-        let half = '1';
+        let half = '';
         let minute = 0;
-        
-        if (matchTime < halfLength) {
-            half = '1';
-            minute = Math.floor(matchTime / 60);
-        } else if (matchTime < halfLength * 2) {
-            half = '2';
-            minute = Math.floor((matchTime - halfLength) / 60);
-        } else if (matchTime < halfLength * 3) {
-            half = 'ET1';
-            minute = Math.floor((matchTime - halfLength * 2) / 60);
+
+        // Prefer explicit half markers when available.
+        if (firstStart !== null) {
+            if (secondStart !== null && videoTime >= secondStart) {
+                half = '2';
+                minute = 45 + Math.floor((videoTime - secondStart) / 60);
+            } else if (videoTime >= firstStart) {
+                half = '1';
+                minute = Math.floor((videoTime - firstStart) / 60);
+            } else {
+                return; // Before 1st half start marker
+            }
         } else {
-            half = 'ET2';
-            minute = Math.floor((matchTime - halfLength * 3) / 60);
+            // Fallback to legacy single-offset sync
+            if (this.matchStartOffset === undefined || this.matchStartOffset === 0) {
+                return;
+            }
+
+            const matchTime = videoTime - this.matchStartOffset;
+            if (matchTime < 0) return;
+
+            const halfLength = 45 * 60; // 45 minutes in seconds
+            if (matchTime < halfLength) {
+                half = '1';
+                minute = Math.floor(matchTime / 60);
+            } else if (matchTime < halfLength * 2) {
+                half = '2';
+                minute = Math.floor((matchTime - halfLength) / 60);
+            } else if (matchTime < halfLength * 3) {
+                half = 'ET1';
+                minute = Math.floor((matchTime - halfLength * 2) / 60);
+            } else {
+                half = 'ET2';
+                minute = Math.floor((matchTime - halfLength * 3) / 60);
+            }
         }
         
         // Update form fields (only if they haven't been manually changed recently)
@@ -962,6 +1323,16 @@ class FootballMatchCoder {
                 btn.style.display = '';
             }
         });
+
+        // Keep default sections hidden when a custom template is active
+        if (this.activeCustomTemplate) {
+            document.querySelectorAll('.section[data-category]').forEach(section => {
+                if (section.closest('#customTemplateSections')) return;
+                section.style.display = 'none';
+            });
+            this.savePresetToStorage();
+            return;
+        }
         
         // Show/hide entire sections if all buttons are hidden
         document.querySelectorAll('.section[data-category]').forEach(section => {
@@ -1158,8 +1529,8 @@ class FootballMatchCoder {
             // L: Fast forward or increase speed (Metrica style) - preserve L for block with modifier
             if (key === 'l' && !ctrlKey && !altKey && !shiftKey) {
                 e.preventDefault();
-                if (this.video.playbackRate < 2.0) {
-                    this.setSpeed(Math.min(2.0, this.video.playbackRate + 0.25));
+                if (this.video.playbackRate < 4.0) {
+                    this.setSpeed(Math.min(4.0, this.video.playbackRate + 0.25));
                 } else {
                     this.seek(5);
                 }
@@ -1176,7 +1547,7 @@ class FootballMatchCoder {
             // Ctrl/Cmd + L: Increase speed
             if (key === 'l' && ctrlKey && !altKey && !shiftKey) {
                 e.preventDefault();
-                this.setSpeed(Math.min(2.0, this.video.playbackRate + 0.25));
+                this.setSpeed(Math.min(4.0, this.video.playbackRate + 0.25));
                 return;
             }
 
@@ -1317,18 +1688,31 @@ class FootballMatchCoder {
         if (this.video.paused) {
             this.video.play();
             btn.textContent = '⏸ Pause';
-            btnMain.textContent = '⏸';
-            btnMain.classList.add('playing');
+            if (btnMain) {
+                btnMain.textContent = '⏸';
+                btnMain.classList.add('playing');
+            }
         } else {
             this.video.pause();
             btn.textContent = '▶ Play';
-            btnMain.textContent = '▶';
-            btnMain.classList.remove('playing');
+            if (btnMain) {
+                btnMain.textContent = '▶';
+                btnMain.classList.remove('playing');
+            }
         }
     }
 
     seek(seconds) {
         this.video.currentTime = Math.max(0, Math.min(this.video.duration, this.video.currentTime + seconds));
+    }
+
+    toggleMute() {
+        this.video.muted = !this.video.muted;
+        const muteBtn = document.getElementById('muteBtn');
+        if (muteBtn) {
+            muteBtn.textContent = this.video.muted ? '🔊 Unmute' : '🔇 Mute';
+            muteBtn.classList.toggle('active', this.video.muted);
+        }
     }
 
     seekFrame(direction, force = false) {
@@ -1374,16 +1758,6 @@ class FootballMatchCoder {
         const speedValue = Math.abs(speed);
         document.getElementById('speedSlider').value = speedValue;
         document.getElementById('speedValue').textContent = speedValue.toFixed(2) + 'x';
-        
-        // Update active button
-        document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
-        if (speedValue === 0.5) {
-            document.getElementById('slowMotion').classList.add('active');
-        } else if (speedValue === 1.0) {
-            document.getElementById('normalSpeed').classList.add('active');
-        } else if (speedValue === 2.0) {
-            document.getElementById('fastForward').classList.add('active');
-        }
     }
 
     updateTimeDisplay() {
@@ -1634,10 +2008,15 @@ class FootballMatchCoder {
         const minute = document.getElementById('minute').value || 0;
         const homeScore = document.getElementById('homeScore').value || 0;
         const awayScore = document.getElementById('awayScore').value || 0;
-        
-        document.getElementById('currentHalf').textContent = half;
-        document.getElementById('currentMinute').textContent = minute;
-        document.getElementById('currentScore').textContent = `${homeScore}-${awayScore}`;
+
+        // Some builds may not render match info overlay elements.
+        const currentHalfEl = document.getElementById('currentHalf');
+        const currentMinuteEl = document.getElementById('currentMinute');
+        const currentScoreEl = document.getElementById('currentScore');
+
+        if (currentHalfEl) currentHalfEl.textContent = half;
+        if (currentMinuteEl) currentMinuteEl.textContent = minute;
+        if (currentScoreEl) currentScoreEl.textContent = `${homeScore}-${awayScore}`;
     }
 
     syncMatchTimeWithVideo() {
@@ -1688,6 +2067,13 @@ class FootballMatchCoder {
         // Save sync offset for future use
         this.matchStartOffset = startOffset;
         localStorage.setItem('footballMatchCoder_matchStartOffset', startOffset.toString());
+
+        // Align first half marker with manual sync if not explicitly set yet.
+        if (this.halfStartOffsets.first === null) {
+            this.halfStartOffsets.first = startOffset;
+            this.saveHalfStartOffsets();
+            this.updateHalfStartStatus();
+        }
     }
 
     recordEvent(eventType) {
@@ -1718,6 +2104,11 @@ class FootballMatchCoder {
             team: team,
             playerName: playerName,
             zone: document.getElementById('zone').value || '',
+            pitchX: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.currentPitchLocation.x : null,
+            pitchY: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.currentPitchLocation.y : null,
+            pitchDepth: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.getPitchZones(this.currentPitchLocation.x, this.currentPitchLocation.y).depth : '',
+            pitchWidth: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.getPitchZones(this.currentPitchLocation.x, this.currentPitchLocation.y).width : '',
+            attackDirection: this.attackDirection,
             notes: document.getElementById('notes').value || '',
             tags: [...this.currentEventTags], // Add tags to event
             eventCount: eventCount // Store the count for this event
@@ -1729,6 +2120,11 @@ class FootballMatchCoder {
             team: team,
             playerName: playerName,
             zone: document.getElementById('zone').value || '',
+            pitchX: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.currentPitchLocation.x : null,
+            pitchY: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.currentPitchLocation.y : null,
+            pitchDepth: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.getPitchZones(this.currentPitchLocation.x, this.currentPitchLocation.y).depth : '',
+            pitchWidth: (this.currentPitchLocation && this.pitchLocationExplicitlySet) ? this.getPitchZones(this.currentPitchLocation.x, this.currentPitchLocation.y).width : '',
+            attackDirection: this.attackDirection,
             tags: [...this.currentEventTags]
         });
 
@@ -1757,6 +2153,11 @@ class FootballMatchCoder {
         
         this.events.push(event);
         this.currentSession.events.push(event);
+
+        if (this.activeCustomTemplate === 'Offensive Set Pieces' && this.isOffensiveTemplatePrimaryEventType(eventType)) {
+            this.activeTemplateParentEventId = event.id;
+            this.selectedEventForTagEditing = event.id;
+        }
         
         this.updateEventsList();
         this.updateTimelineEvents();
@@ -1768,6 +2169,7 @@ class FootballMatchCoder {
         document.getElementById('notes').value = '';
         this.currentEventTags = [];
         this.updateSelectedTags();
+        this.clearPitchLocation();
 
         // Visual feedback
         this.showEventFeedback(eventType);
@@ -1816,6 +2218,12 @@ class FootballMatchCoder {
             if (event.team) details.push(`Team: ${event.team}`);
             if (event.minute !== null) details.push(`${event.half}H ${event.minute}'`);
             if (event.zone) details.push(`Zone: ${event.zone}`);
+            if (event.pitchX !== null && event.pitchY !== null && event.pitchX !== undefined && event.pitchY !== undefined) {
+                details.push(`Pitch: X ${event.pitchX}, Y ${event.pitchY}`);
+            }
+            if (event.pitchDepth || event.pitchWidth) {
+                details.push(`Area: ${event.pitchDepth || 'Unknown'} | ${event.pitchWidth || 'Unknown'}`);
+            }
             if (event.type === 'goal') details.push(`Score: ${event.homeScore}-${event.awayScore}`);
             if (event.notes) details.push(event.notes);
             
@@ -1843,6 +2251,17 @@ class FootballMatchCoder {
                 </div>
                 <button class="delete-btn" onclick="app.deleteEvent(${event.id})">Delete</button>
             `;
+
+            if (this.selectedEventForTagEditing === event.id) {
+                item.classList.add('event-item-selected');
+            }
+
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-btn')) return;
+                if (this.activeCustomTemplate === 'Offensive Set Pieces') {
+                    this.selectEventForTagEditing(event.id);
+                }
+            });
 
             eventsList.appendChild(item);
         });
@@ -2061,7 +2480,18 @@ class FootballMatchCoder {
     }
 
     saveSession() {
-        const dataStr = JSON.stringify(this.currentSession, null, 2);
+        const payload = {
+            version: '2.0',
+            session: this.currentSession,
+            appState: {
+                matchStartOffset: this.matchStartOffset,
+                halfStartOffsets: this.halfStartOffsets,
+                currentPreset: this.currentPreset,
+                activeTemplateName: this.activeCustomTemplate,
+                savedAt: new Date().toISOString()
+            }
+        };
+        const dataStr = JSON.stringify(payload, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
@@ -2069,6 +2499,85 @@ class FootballMatchCoder {
         link.download = `${this.currentSession.name || 'football-session'}-${Date.now()}.json`;
         link.click();
         URL.revokeObjectURL(url);
+    }
+
+    saveAllFormats() {
+        this.saveSession();
+        this.exportData('excel');
+        this.exportData('csv');
+        this.exportData('xml');
+    }
+
+    exportAllFormats() {
+        this.exportData('csv');
+        this.exportData('excel');
+        this.exportData('xml');
+        this.exportData('json');
+        this.exportData('jsonl');
+        this.exportData('sql');
+    }
+
+    async loadSessionFromFile(file) {
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            const sessionData = parsed && parsed.session ? parsed.session : parsed;
+            const appState = parsed && parsed.appState ? parsed.appState : null;
+
+            if (!sessionData || !Array.isArray(sessionData.events)) {
+                throw new Error('Invalid session file format');
+            }
+
+            this.currentSession = sessionData;
+            this.events = sessionData.events || [];
+            this.lineups = sessionData.lineups || { home: [], away: [] };
+
+            // Restore fields
+            document.getElementById('sessionName').value = sessionData.name || '';
+            document.getElementById('homeTeam').value = sessionData.homeTeam || '';
+            document.getElementById('awayTeam').value = sessionData.awayTeam || '';
+
+            // Rebuild tags list from imported events
+            this.availableTags = [...new Set(this.events.flatMap(event => event.tags || []))];
+            this.saveTagsToStorage();
+
+            if (appState) {
+                if (typeof appState.matchStartOffset === 'number') {
+                    this.matchStartOffset = appState.matchStartOffset;
+                    localStorage.setItem('footballMatchCoder_matchStartOffset', String(this.matchStartOffset));
+                }
+                if (appState.halfStartOffsets) {
+                    this.halfStartOffsets = {
+                        first: typeof appState.halfStartOffsets.first === 'number' ? appState.halfStartOffsets.first : null,
+                        second: typeof appState.halfStartOffsets.second === 'number' ? appState.halfStartOffsets.second : null
+                    };
+                    this.saveHalfStartOffsets();
+                }
+                if (appState.currentPreset) {
+                    this.currentPreset = { ...this.defaultPreset, ...appState.currentPreset };
+                    this.applyPreset();
+                    this.buildPresetCheckboxes();
+                }
+                if (appState.activeTemplateName === 'Offensive Set Pieces') {
+                    this.applyMetricaTemplate('offensiveSetPieces');
+                }
+            }
+
+            this.initializeEventCounters();
+            this.updateEventsList();
+            this.updatePlayerList();
+            this.updateLineupStatus();
+            this.updateHalfStartStatus();
+            this.updateMatchInfo();
+            this.updateTimelineEvents();
+            this.clearPitchLocation();
+            this.saveToStorage();
+
+            alert(`Session loaded: ${file.name}`);
+        } catch (error) {
+            console.error('Error loading session file:', error);
+            alert(`Could not load session: ${error.message}`);
+        }
     }
 
     exportData(format = 'csv') {
@@ -2105,7 +2614,7 @@ class FootballMatchCoder {
     }
 
     exportCSV(baseName, timestamp) {
-        let csv = 'Timestamp,Time,Half,Minute,Event Type,Team,Player,Zone,Home Score,Away Score,Notes\n';
+        let csv = 'Timestamp,Time,Half,Minute,Event Type,Team,Player,Zone,Pitch X,Pitch Y,Pitch Depth,Pitch Width,Home Score,Away Score,Tags,Notes\n';
 
         this.events.forEach(event => {
             const row = [
@@ -2117,8 +2626,13 @@ class FootballMatchCoder {
                 event.team || '',
                 event.playerName || '',
                 event.zone || '',
+                event.pitchX ?? '',
+                event.pitchY ?? '',
+                event.pitchDepth || '',
+                event.pitchWidth || '',
                 event.homeScore || 0,
                 event.awayScore || 0,
+                (event.tags || []).join('; '),
                 (event.notes || '').replace(/"/g, '""')
             ];
             csv += row.map(cell => `"${cell}"`).join(',') + '\n';
@@ -2129,7 +2643,7 @@ class FootballMatchCoder {
 
     exportExcel(baseName, timestamp) {
         // Prepare data for Excel
-        const headers = ['Timestamp', 'Time', 'Half', 'Minute', 'Event Type', 'Team', 'Player', 'Zone', 'Home Score', 'Away Score', 'Notes'];
+        const headers = ['Timestamp', 'Time', 'Half', 'Minute', 'Event Type', 'Team', 'Player', 'Zone', 'Pitch X', 'Pitch Y', 'Pitch Depth', 'Pitch Width', 'Home Score', 'Away Score', 'Tags', 'Notes'];
         const data = this.events.map(event => [
             event.timestamp,
             event.timeString,
@@ -2139,8 +2653,13 @@ class FootballMatchCoder {
             event.team || '',
             event.playerName || '',
             event.zone || '',
+            event.pitchX ?? '',
+            event.pitchY ?? '',
+            event.pitchDepth || '',
+            event.pitchWidth || '',
             event.homeScore || 0,
             event.awayScore || 0,
+            (event.tags || []).join('; '),
             event.notes || ''
         ]);
 
@@ -2158,8 +2677,13 @@ class FootballMatchCoder {
             { wch: 8 },  // Team
             { wch: 15 }, // Player
             { wch: 15 }, // Zone
+            { wch: 8 },  // Pitch X
+            { wch: 8 },  // Pitch Y
+            { wch: 16 }, // Pitch Depth
+            { wch: 12 }, // Pitch Width
             { wch: 12 }, // Home Score
             { wch: 12 }, // Away Score
+            { wch: 25 }, // Tags
             { wch: 30 }  // Notes
         ];
 
@@ -2201,8 +2725,13 @@ class FootballMatchCoder {
             xml += `      <team>${this.escapeXML(event.team || '')}</team>\n`;
             xml += `      <player>${this.escapeXML(event.playerName || '')}</player>\n`;
             xml += `      <zone>${this.escapeXML(event.zone || '')}</zone>\n`;
+            xml += `      <pitch-x>${event.pitchX ?? ''}</pitch-x>\n`;
+            xml += `      <pitch-y>${event.pitchY ?? ''}</pitch-y>\n`;
+            xml += `      <pitch-depth>${this.escapeXML(event.pitchDepth || '')}</pitch-depth>\n`;
+            xml += `      <pitch-width>${this.escapeXML(event.pitchWidth || '')}</pitch-width>\n`;
             xml += `      <home-score>${event.homeScore || 0}</home-score>\n`;
             xml += `      <away-score>${event.awayScore || 0}</away-score>\n`;
+            xml += `      <tags>${this.escapeXML((event.tags || []).join('; '))}</tags>\n`;
             xml += `      <notes>${this.escapeXML(event.notes || '')}</notes>\n`;
             xml += `    </event>\n`;
         });
@@ -2338,6 +2867,7 @@ class FootballMatchCoder {
                 this.updateMatchInfo();
                 this.updatePlayerList();
                 this.updateLineupStatus();
+                this.clearPitchLocation();
             }
         } catch (e) {
             console.warn('Could not load from localStorage:', e);
@@ -3062,6 +3592,8 @@ class FootballMatchCoder {
             `;
             container.appendChild(tagEl);
         });
+
+        this.syncTemplateTagButtonStates();
     }
 
     updateTagSuggestions() {
@@ -3304,6 +3836,359 @@ class FootballMatchCoder {
     }
 
     // ==================== TEMPLATES SYSTEM ====================
+    buildMetricaTemplates() {
+        return {
+            standard: {
+                name: 'Metrica - Standard',
+                description: 'Balanced football coding panel for match analysis.',
+                enabledEvents: [
+                    'pass-complete', 'pass-incomplete', 'key-pass', 'assist',
+                    'shot-on-target', 'shot-off-target', 'goal', 'shot-blocked',
+                    'tackle', 'interception', 'clearance', 'block',
+                    'foul', 'yellow-card', 'red-card',
+                    'corner', 'free-kick', 'offside'
+                ]
+            },
+            advanced: {
+                name: 'Metrica - Advanced',
+                description: 'Full panel with all available event buttons.',
+                enabledEvents: Object.values(this.allEventTypes).flat().map(eventType => eventType.event)
+            },
+            teams: {
+                name: 'Metrica - Teams',
+                description: 'Team metrics focus: attacks, shots, fouls, corners and free kicks.',
+                enabledEvents: [
+                    'pass-complete', 'pass-incomplete', 'key-pass', 'assist',
+                    'shot-on-target', 'shot-off-target', 'goal', 'shot-blocked',
+                    'tackle', 'interception', 'clearance',
+                    'foul', 'yellow-card',
+                    'corner', 'free-kick'
+                ]
+            },
+            individual: {
+                name: 'Metrica - Individual',
+                description: 'Individual performance focus for player-level coding.',
+                enabledEvents: [
+                    'pass-complete', 'pass-incomplete', 'key-pass', 'assist',
+                    'shot-on-target', 'shot-off-target', 'goal', 'shot-blocked',
+                    'dribble-success', 'dribble-fail', 'take-on',
+                    'tackle', 'interception', 'block',
+                    'foul', 'yellow-card', 'red-card',
+                    'corner', 'free-kick', 'offside'
+                ]
+            },
+            tennis: {
+                name: 'Metrica - Tennis (Adapted)',
+                description: 'Adapted minimal football panel from the tennis template.',
+                enabledEvents: [
+                    'pass-complete', 'pass-incomplete',
+                    'shot-on-target', 'shot-off-target',
+                    'foul'
+                ]
+            },
+            offensiveSetPieces: {
+                name: 'Offensive Set Pieces',
+                description: 'Ready-to-import coding structure for attacking corners and free kicks.',
+                enabledEvents: [
+                    'corner', 'free-kick',
+                    'shot-on-target', 'shot-off-target', 'shot-blocked', 'goal',
+                    'foul', 'clearance', 'block',
+                    'pass-complete', 'key-pass'
+                ],
+                sections: {
+                    Corners: [
+                        'Corner Won',
+                        'Corner Taken',
+                        'Short Routine',
+                        'Cross Into Box',
+                        'Direct Shot',
+                        'Second Ball Won',
+                        'Delivery Blocked / Cleared First Contact',
+                        'Foul in Box / Dangerous Contact'
+                    ],
+                    'Free Kicks': [
+                        'Attacking Free Kick Won',
+                        'Attacking Free Kick Taken',
+                        'Short Routine',
+                        'Cross Into Box',
+                        'Direct Shot',
+                        'Second Ball Won',
+                        'Delivery Blocked / Cleared First Contact',
+                        'Foul in Box / Dangerous Contact'
+                    ],
+                    Outcomes: [
+                        'Shot On Target',
+                        'Shot Off Target',
+                        'Shot Blocked',
+                        'Goal',
+                        'Big Chance',
+                        'No Shot Outcome',
+                        'Possession Retained',
+                        'Possession Lost'
+                    ],
+                    'Delivery Quality/Target Zone': [
+                        'Delivery Quality: Good',
+                        'Delivery Quality: Poor',
+                        'Near Post',
+                        'Central',
+                        'Far Post',
+                        '6-Yard Box',
+                        'Penalty Spot',
+                        'Edge of Penalty Area',
+                        'Outside Penalty Area'
+                    ],
+                    'Contact / Duel Buttons': [
+                        'First Contact Won (Attack)',
+                        'First Contact Won (Defense)',
+                        'Aerial Duel Won',
+                        'Aerial Duel Lost',
+                        'Flick-On',
+                        'Header Attempt',
+                        'Volley / Foot Attempt'
+                    ],
+                    'Player/Structure Context': [
+                        'Screen/Block Run',
+                        'Crowd GK',
+                        'Rebound Collector'
+                    ],
+                    'Goal Kicks': [
+                        'Goal Kick',
+                        'Short Pass',
+                        'Medium Pass',
+                        'Long Pass',
+                        'Right',
+                        'Central',
+                        'Left'
+                    ],
+                    'Throw-Ins': [
+                        'Throw-In Taken',
+                        'Short Throw',
+                        'Long Throw',
+                        'Backward',
+                        'Forward',
+                        'Lateral',
+                        'First Contact Won',
+                        'Possession Retained',
+                        'Possession Lost',
+                        'Final Third Entry'
+                    ]
+                },
+                customButtons: true
+            }
+        };
+    }
+
+    getEventLabel(eventType) {
+        for (const categoryEvents of Object.values(this.allEventTypes)) {
+            const match = categoryEvents.find(item => item.event === eventType);
+            if (match) return match.label;
+        }
+        return this.customEventDisplayNames[eventType] || eventType;
+    }
+
+    isTemplatePrimaryEvent(template, itemLabel) {
+        if (!template || template.name !== 'Offensive Set Pieces') return true;
+        const primaryEvents = new Set([
+            'Corner Taken',
+            'Attacking Free Kick Taken',
+            'Goal Kick',
+            'Throw-In Taken'
+        ]);
+        return primaryEvents.has(itemLabel);
+    }
+
+    normalizeTagLabel(label) {
+        return (label || '').trim().toLowerCase();
+    }
+
+    isOffensiveTemplatePrimaryEventType(eventType) {
+        const primaryEventTypes = new Set([
+            this.toEventType('Corner Taken'),
+            this.toEventType('Attacking Free Kick Taken'),
+            this.toEventType('Goal Kick'),
+            this.toEventType('Throw-In Taken')
+        ]);
+        return primaryEventTypes.has(eventType);
+    }
+
+    toggleTemplateTag(tagLabel) {
+        const normalizedTag = this.normalizeTagLabel(tagLabel);
+        if (!normalizedTag) return;
+
+        let targetEvent = null;
+        if (this.selectedEventForTagEditing) {
+            targetEvent = this.events.find(event => event.id === this.selectedEventForTagEditing) || null;
+            if (targetEvent) {
+                this.activeTemplateParentEventId = targetEvent.id;
+            }
+        }
+        if (this.activeCustomTemplate === 'Offensive Set Pieces' && this.activeTemplateParentEventId) {
+            targetEvent = targetEvent || this.events.find(event => event.id === this.activeTemplateParentEventId) || null;
+        }
+
+        // Fallback: use most recent primary event if active pointer is unavailable.
+        if (!targetEvent && this.activeCustomTemplate === 'Offensive Set Pieces') {
+            for (let i = this.events.length - 1; i >= 0; i--) {
+                if (this.isOffensiveTemplatePrimaryEventType(this.events[i].type)) {
+                    targetEvent = this.events[i];
+                    this.activeTemplateParentEventId = targetEvent.id;
+                    break;
+                }
+            }
+        }
+
+        if (targetEvent) {
+            const existingTags = Array.isArray(targetEvent.tags) ? targetEvent.tags : [];
+            if (existingTags.includes(normalizedTag)) {
+                targetEvent.tags = existingTags.filter(tag => tag !== normalizedTag);
+            } else {
+                targetEvent.tags = [...existingTags, normalizedTag];
+            }
+            this.updateEventsList();
+            this.saveToStorage();
+        } else {
+            if (this.currentEventTags.includes(normalizedTag)) {
+                this.currentEventTags = this.currentEventTags.filter(tag => tag !== normalizedTag);
+            } else {
+                this.currentEventTags.push(normalizedTag);
+            }
+        }
+
+        if (!this.availableTags.includes(normalizedTag)) {
+            this.availableTags.push(normalizedTag);
+            this.saveTagsToStorage();
+        }
+
+        this.updateSelectedTags();
+        this.updateTagSuggestions();
+    }
+
+    selectEventForTagEditing(eventId) {
+        const event = this.events.find(entry => entry.id === eventId);
+        if (!event) return;
+
+        this.selectedEventForTagEditing = eventId;
+        this.activeTemplateParentEventId = eventId;
+        this.currentEventTags = Array.isArray(event.tags) ? [...event.tags] : [];
+        if (event.pitchX !== null && event.pitchY !== null && event.pitchX !== undefined && event.pitchY !== undefined) {
+            this.currentPitchLocation = { x: event.pitchX, y: event.pitchY };
+        } else {
+            this.currentPitchLocation = null;
+        }
+        this.pitchLocationExplicitlySet = false;
+        this.updatePitchLocatorUI();
+        this.updateSelectedTags();
+        this.updateTagSuggestions();
+        this.updateEventsList();
+        this.syncTemplateTagButtonStates();
+    }
+
+    syncTemplateTagButtonStates() {
+        const container = document.getElementById('customTemplateSections');
+        if (!container) return;
+
+        const targetEventId = this.selectedEventForTagEditing || this.activeTemplateParentEventId;
+        const targetEvent = targetEventId
+            ? this.events.find(event => event.id === targetEventId)
+            : null;
+        const activeTags = targetEvent && Array.isArray(targetEvent.tags)
+            ? targetEvent.tags
+            : this.currentEventTags;
+
+        container.querySelectorAll('.template-tag-btn').forEach(btn => {
+            const tagLabel = btn.getAttribute('data-tag-label');
+            const normalizedTag = this.normalizeTagLabel(tagLabel);
+            const isActive = activeTags.includes(normalizedTag);
+            btn.classList.toggle('active', isActive);
+        });
+    }
+
+    toEventType(label) {
+        return label
+            .toLowerCase()
+            .replace(/\//g, ' ')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    clearCustomTemplateButtons() {
+        const customContainer = document.getElementById('customTemplateSections');
+        if (customContainer) {
+            customContainer.remove();
+        }
+        this.activeCustomTemplate = null;
+        this.activeTemplateParentEventId = null;
+        this.selectedEventForTagEditing = null;
+        document.querySelectorAll('.section[data-category]').forEach(section => {
+            section.style.display = '';
+        });
+    }
+
+    renderCustomTemplateButtons(template) {
+        this.clearCustomTemplateButtons();
+        this.customEventDisplayNames = {};
+
+        const codingPanel = document.getElementById('codingPanel');
+        const firstEventSection = codingPanel.querySelector('.section[data-category]');
+        if (!codingPanel || !firstEventSection || !template.sections) return;
+
+        this.activeCustomTemplate = template.name;
+        document.querySelectorAll('.section[data-category]').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        const container = document.createElement('div');
+        container.id = 'customTemplateSections';
+
+        const categoryClassMap = {
+            Corners: 'other-btn',
+            'Free Kicks': 'other-btn',
+            Outcomes: 'shot-btn',
+            'Delivery Quality/Target Zone': 'pass-btn',
+            'Contact / Duel Buttons': 'defensive-btn',
+            'Player/Structure Context': 'dribble-btn',
+            'Goal Kicks': 'other-btn',
+            'Throw-Ins': 'other-btn'
+        };
+
+        Object.entries(template.sections).forEach(([sectionName, sectionItems]) => {
+            const section = document.createElement('div');
+            section.className = 'section';
+            section.setAttribute('data-category', 'template-custom');
+
+            const title = document.createElement('h3');
+            title.textContent = sectionName;
+            section.appendChild(title);
+
+            const buttonsWrap = document.createElement('div');
+            buttonsWrap.className = 'event-buttons';
+
+            sectionItems.forEach(itemLabel => {
+                const eventType = this.toEventType(itemLabel);
+                this.customEventDisplayNames[eventType] = itemLabel;
+
+                const button = document.createElement('button');
+                const isPrimaryEvent = this.isTemplatePrimaryEvent(template, itemLabel);
+                if (isPrimaryEvent) {
+                    button.className = `event-btn ${categoryClassMap[sectionName] || 'other-btn'}`;
+                    button.setAttribute('data-event', eventType);
+                } else {
+                    button.className = 'template-tag-btn';
+                    button.setAttribute('data-tag-label', itemLabel);
+                    button.title = 'Adds/removes this descriptor as a tag';
+                }
+                button.textContent = itemLabel;
+                buttonsWrap.appendChild(button);
+            });
+
+            section.appendChild(buttonsWrap);
+            container.appendChild(section);
+        });
+
+        codingPanel.insertBefore(container, firstEventSection);
+        this.syncTemplateTagButtonStates();
+    }
+
     setupTemplatesSystem() {
         const templateBtn = document.getElementById('templateBtn');
         const templateMenu = document.getElementById('templateMenu');
@@ -3379,6 +4264,12 @@ class FootballMatchCoder {
     }
 
     loadTemplate(name) {
+        if (name.startsWith('metrica:')) {
+            const templateId = name.replace('metrica:', '');
+            this.applyMetricaTemplate(templateId);
+            return;
+        }
+
         const template = this.templates[name];
         if (!template) {
             alert(`Template "${name}" not found`);
@@ -3408,6 +4299,11 @@ class FootballMatchCoder {
     }
 
     deleteTemplate(name) {
+        if (name.startsWith('metrica:')) {
+            alert('Built-in Metrica templates cannot be deleted.');
+            return;
+        }
+
         delete this.templates[name];
         this.saveTemplatesToStorage();
         this.loadTemplateList();
@@ -3415,6 +4311,47 @@ class FootballMatchCoder {
     }
 
     previewTemplate(name) {
+        if (name.startsWith('metrica:')) {
+            const templateId = name.replace('metrica:', '');
+            const template = this.metricaTemplates[templateId];
+            if (!template) return;
+
+            const preview = document.getElementById('templatePreview');
+            preview.innerHTML = `<strong>${template.name}</strong><br>${template.description}<br><br>`;
+
+            if (template.sections) {
+                Object.entries(template.sections).forEach(([sectionName, sectionItems]) => {
+                    const header = document.createElement('div');
+                    header.className = 'template-event-item';
+                    header.style.fontWeight = '700';
+                    header.style.marginTop = '0.4rem';
+                    header.textContent = sectionName;
+                    preview.appendChild(header);
+
+                    sectionItems.forEach((itemLabel, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'template-event-item';
+                        item.textContent = `${index + 1}. ${itemLabel}`;
+                        preview.appendChild(item);
+                    });
+                });
+            } else {
+                const title = document.createElement('div');
+                title.className = 'template-event-item';
+                title.style.fontWeight = '700';
+                title.textContent = `Enabled Buttons (${template.enabledEvents.length})`;
+                preview.appendChild(title);
+
+                template.enabledEvents.forEach((eventType, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'template-event-item';
+                    item.textContent = `${index + 1}. ${this.getEventLabel(eventType)}`;
+                    preview.appendChild(item);
+                });
+            }
+            return;
+        }
+
         const template = this.templates[name];
         if (!template) return;
 
@@ -3443,6 +4380,59 @@ class FootballMatchCoder {
             option.textContent = `${name} (${this.templates[name].length} events)`;
             select.appendChild(option);
         });
+
+        const divider = document.createElement('option');
+        divider.disabled = true;
+        divider.textContent = '--- Metrica Templates ---';
+        select.appendChild(divider);
+
+        Object.entries(this.metricaTemplates).forEach(([id, template]) => {
+            const option = document.createElement('option');
+            option.value = `metrica:${id}`;
+            option.textContent = template.name;
+            select.appendChild(option);
+        });
+    }
+
+    applyMetricaTemplate(templateId) {
+        const template = this.metricaTemplates[templateId];
+        if (!template) {
+            alert('Template not found');
+            return;
+        }
+
+        if (template.customButtons) {
+            this.renderCustomTemplateButtons(template);
+        } else {
+            this.clearCustomTemplateButtons();
+            this.customEventDisplayNames = {};
+        }
+
+        const newPreset = { ...this.defaultPreset };
+        Object.keys(newPreset).forEach(eventType => {
+            newPreset[eventType] = template.enabledEvents.includes(eventType);
+        });
+
+        this.currentPreset = newPreset;
+        this.applyPreset();
+        this.buildPresetCheckboxes();
+        this.savePresetToStorage();
+
+        if (template.sections) {
+            const templateTags = Object.values(template.sections)
+                .flat()
+                .map(tag => tag.toLowerCase());
+            const uniqueTags = [...new Set(templateTags)];
+            uniqueTags.forEach(tag => {
+                if (!this.availableTags.includes(tag)) {
+                    this.availableTags.push(tag);
+                }
+            });
+            this.saveTagsToStorage();
+            this.updateTagSuggestions();
+        }
+
+        alert(`Applied "${template.name}" template to coding window buttons.`);
     }
 
     saveTemplatesToStorage() {
@@ -3556,9 +4546,13 @@ class FootballMatchCoder {
         document.getElementById('minute').value = '0';
         document.getElementById('homeScore').value = '0';
         document.getElementById('awayScore').value = '0';
+        this.halfStartOffsets = { first: null, second: null };
+        this.saveHalfStartOffsets();
+        this.updateHalfStartStatus();
         
         // Clear notes
         document.getElementById('notes').value = '';
+        this.clearPitchLocation();
         
         // Clear filters
         this.clearFilters();
@@ -3905,7 +4899,7 @@ class FootballMatchCoder {
 <body>
     <h1>⚽ Football Match Coder - User Manual</h1>
     
-    <p><strong>Version:</strong> 1.0<br>
+    <p><strong>Version:</strong> 2.0<br>
     <strong>Last Updated:</strong> ${new Date().toLocaleDateString()}</p>
 
     <h2>Table of Contents</h2>
@@ -3928,6 +4922,7 @@ class FootballMatchCoder {
         <li>Select your football match video file (MP4/H.264 recommended)</li>
         <li>The video will load and appear in the main video player</li>
         <li>You can save the video in the app for quick access later using the <strong>"Save Video"</strong> button</li>
+        <li>Optional: click <strong>"YouTube -&gt; MP4"</strong> to import a YouTube video through the local backend service</li>
     </ol>
 
     <h3>Setting Up Your Session</h3>
@@ -3944,7 +4939,8 @@ class FootballMatchCoder {
         <li><strong>Half:</strong> Select which half you're in (1, 2, ET1, ET2)</li>
         <li><strong>Minute:</strong> Enter the current minute of play</li>
         <li><strong>Score:</strong> Set the current home and away scores</li>
-        <li>Use the <strong>"🔄 Sync"</strong> button to sync video time with match time</li>
+        <li>Use <strong>"Mark 1st Half Start"</strong> and <strong>"Mark 2nd Half Start"</strong> to anchor official kickoff times</li>
+        <li>When 2nd half is marked, attacking direction automatically flips for pitch-area mapping</li>
     </ul>
 
     <h2 id="video-playback">2. Video Playback</h2>
@@ -3952,7 +4948,8 @@ class FootballMatchCoder {
     <h3>Basic Controls</h3>
     <ul>
         <li><strong>Play/Pause:</strong> Click the play button or press <span class="keyboard-shortcut">Space</span></li>
-        <li><strong>Speed Control:</strong> Use the speed slider (0.25x to 2.0x) or buttons</li>
+        <li><strong>Speed Control:</strong> Use the playback speed slider (0.25x to 4.0x)</li>
+        <li><strong>Mute:</strong> Click the mute button or press <span class="keyboard-shortcut">M</span> to toggle audio</li>
         <li><strong>Seek:</strong> Click anywhere on the timeline to jump to that time</li>
         <li><strong>Quick Seek:</strong> Use ⏪ (rewind 5s) or ⏩ (forward 5s) buttons</li>
     </ul>
@@ -3970,8 +4967,6 @@ class FootballMatchCoder {
         <ul>
             <li>Color-coded event markers show all coded events</li>
             <li>Click any event marker to jump to that timestamp</li>
-            <li>Zoom in/out using the zoom controls (+/- buttons)</li>
-            <li>Use <span class="keyboard-shortcut">${isMac ? 'Cmd' : 'Ctrl'}</span> + Mouse Wheel to zoom</li>
             <li>Time marks show major intervals for easy navigation</li>
         </ul>
     </div>
@@ -4033,7 +5028,7 @@ class FootballMatchCoder {
         <li>Play or navigate to the moment in the video where the event occurs</li>
         <li>Select the <strong>Team</strong> (Home or Away)</li>
         <li>Select the <strong>Player</strong> from the dropdown (if lineups are loaded)</li>
-        <li>Select the <strong>Zone</strong> where the event occurred (optional)</li>
+        <li>Select the <strong>Zone</strong> and/or click the <strong>Pitch Locator</strong> where the event occurred (optional)</li>
         <li>Add any <strong>Notes</strong> (optional)</li>
         <li>Click the event button or use the keyboard shortcut</li>
         <li>The event is automatically recorded with the current timestamp</li>
@@ -4047,7 +5042,9 @@ class FootballMatchCoder {
         <li>Event type</li>
         <li>Team and player</li>
         <li>Zone location</li>
+        <li>Pitch coordinates (X/Y) and derived pitch area (Depth/Width)</li>
         <li>Score at the time of the event</li>
+        <li>Descriptor tags (e.g., set-piece outcomes and contextual descriptors)</li>
         <li>Any notes you added</li>
         <li>Event count (shows how many times this event type has been coded)</li>
     </ul>
@@ -4243,7 +5240,7 @@ class FootballMatchCoder {
 
     <h3>Event Templates</h3>
     <div class="feature-box">
-        <p>Save and reuse coding sequences:</p>
+        <p>Save and reuse coding sequences, or apply built-in templates:</p>
         <ol>
             <li>Code a sequence of events</li>
             <li>Click <strong>"Templates ▼"</strong> in the header</li>
@@ -4251,6 +5248,12 @@ class FootballMatchCoder {
             <li>Click <strong>"Save Current Sequence"</strong></li>
             <li>Apply templates later to quickly code common event patterns</li>
         </ol>
+        <p><strong>Offensive Set Pieces template:</strong> this template uses a hybrid model with primary set-piece events plus descriptor tag buttons.</p>
+        <ul>
+            <li>Primary events are recorded as rows (e.g., Corner Taken, Throw-In Taken)</li>
+            <li>Descriptor buttons add/remove tags on the selected event</li>
+            <li>Click any event in Events Log to retroactively edit descriptors and pitch point</li>
+        </ul>
     </div>
 
     <h3>Tags System</h3>
@@ -4299,9 +5302,32 @@ class FootballMatchCoder {
 
     <h3>Match Time Sync</h3>
     <ul>
-        <li>Click <strong>"🔄 Sync"</strong> to set the match start offset</li>
-        <li>Enter the video timestamp where the match actually begins</li>
-        <li>The app will automatically calculate and display the correct half and minute</li>
+        <li>Use <strong>Mark 1st Half Start</strong> to set the official kickoff point</li>
+        <li>Use <strong>Mark 2nd Half Start</strong> at second-half kickoff</li>
+        <li>The app auto-calculates half/minute from those markers</li>
+        <li>Second-half marking automatically flips attacking direction for pitch depth mapping</li>
+    </ul>
+
+    <h3>Pitch Locator & Direction</h3>
+    <ul>
+        <li>Use the pitch widget to click event location and save X/Y coordinates</li>
+        <li>Set attacking direction (Left-to-right or Right-to-left) above the pitch</li>
+        <li>Depth and width areas are derived automatically: Defensive/Central/Attacking Third and Left/Central/Right</li>
+        <li>If an event is selected in Events Log, pitch clicks update that past event retroactively</li>
+    </ul>
+
+    <h3>Compact UI</h3>
+    <ul>
+        <li>Click <strong>Compact UI</strong> to reduce spacing and fit more controls on screen</li>
+        <li>Click <strong>Standard UI</strong> to return to regular layout</li>
+        <li>Preference is saved automatically</li>
+    </ul>
+
+    <h3>YouTube to MP4 Import</h3>
+    <ul>
+        <li>Click <strong>YouTube -&gt; MP4</strong> and paste a link</li>
+        <li>The app uses a local backend to download and convert, then auto-loads the video</li>
+        <li>If backend is not running, start it in Terminal: <code>python3 youtube_backend.py</code></li>
     </ul>
 
     <h2 id="data-export">7. Data Export</h2>
@@ -4313,14 +5339,13 @@ class FootballMatchCoder {
     <ul>
         <li>Click <strong>"Export Data"</strong> → <strong>"CSV"</strong></li>
         <li>Perfect for analysis in Excel, Google Sheets, or data analysis tools</li>
-        <li>Includes all event data: timestamp, time, half, minute, event type, team, player, zone, scores, notes</li>
+        <li>Includes event metadata, tags, pitch coordinates (X/Y), and derived pitch area fields</li>
     </ul>
 
     <h4>JSON Export</h4>
     <ul>
         <li>Click <strong>"Export Data"</strong> → <strong>"JSON"</strong></li>
-        <li>Full session data including events, lineups, and session info</li>
-        <li>Can be imported back into the app using <strong>"Load Session"</strong></li>
+        <li>Events export for integration and analysis pipelines</li>
     </ul>
 
     <h4>XML Export</h4>
@@ -4337,9 +5362,10 @@ class FootballMatchCoder {
 
     <h3>Saving Sessions</h3>
     <ul>
-        <li>Click <strong>"Save Session"</strong> to save your complete session</li>
-        <li>Sessions are saved as JSON files</li>
-        <li>Load saved sessions later to continue coding or review data</li>
+        <li>Use <strong>Save Session ▼</strong> to choose format, or <strong>Save All Formats</strong></li>
+        <li><strong>Session JSON (Full)</strong> stores full session + app state for resume</li>
+        <li>Use <strong>Load Session</strong> to import a previously saved session JSON and continue coding</li>
+        <li><strong>Export Data ▼</strong> also includes <strong>Export All Formats</strong></li>
         <li>All session data is also automatically saved to browser local storage</li>
     </ul>
 
@@ -4351,8 +5377,8 @@ class FootballMatchCoder {
             <li><strong>Use keyboard shortcuts:</strong> They're much faster than clicking buttons</li>
             <li><strong>Load lineups first:</strong> Makes player selection much quicker</li>
             <li><strong>Create button presets:</strong> Hide unused event types to reduce clutter</li>
+            <li><strong>Use Compact UI:</strong> Increase visible workspace on smaller screens</li>
             <li><strong>Use the timeline:</strong> Click event markers to quickly jump to key moments</li>
-            <li><strong>Zoom the timeline:</strong> Use zoom controls to focus on specific periods</li>
             <li><strong>Save frequently:</strong> Export your data regularly to avoid data loss</li>
         </ul>
     </div>
@@ -4363,7 +5389,8 @@ class FootballMatchCoder {
             <li><strong>Be consistent:</strong> Use the same definitions for events throughout</li>
             <li><strong>Add notes:</strong> Notes help provide context when analyzing data later</li>
             <li><strong>Use tags:</strong> Tag events to group related actions (e.g., "counter-attack", "set-piece")</li>
-            <li><strong>Sync match time:</strong> Use the sync feature to ensure accurate match time tracking</li>
+            <li><strong>Use half markers:</strong> Mark official 1st and 2nd half starts for accurate time tracking</li>
+            <li><strong>Set attack direction:</strong> Ensure pitch depth zones are interpreted correctly</li>
             <li><strong>Review events:</strong> Use the event log to review and verify coded events</li>
             <li><strong>Filter strategically:</strong> Use filters to focus on specific aspects of the match</li>
         </ul>
@@ -4374,7 +5401,7 @@ class FootballMatchCoder {
         <ul>
             <li><strong>Video format:</strong> MP4 with H.264 codec works best across all browsers</li>
             <li><strong>Frame-by-frame:</strong> Use arrow keys for precise event timing</li>
-            <li><strong>Speed control:</strong> Use slower speeds (0.25x, 0.5x) for detailed analysis</li>
+            <li><strong>Speed control:</strong> Use the playback slider for slow/fast review</li>
             <li><strong>Save videos:</strong> Save videos in the app to avoid reloading them</li>
             <li><strong>Timeline navigation:</strong> Use the timeline to quickly jump between events</li>
         </ul>
