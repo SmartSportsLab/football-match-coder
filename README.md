@@ -1,4 +1,4 @@
-# ⚽ Football Match Coder
+# Football Match Coder
 
 A video coding application for analyzing football matches, similar to Metrica Nexus but specifically designed for football data collection.
 

@@ -2288,7 +2288,7 @@ class FootballMatchCoder {
             'shot-on-target': 'Shot On Target',
             'shot-off-target': 'Shot Off Target',
             'shot-blocked': 'Shot Blocked',
-            'goal': 'Goal ⚽',
+            'goal': 'Goal',
             'tackle': 'Tackle',
             'interception': 'Interception',
             'clearance': 'Clearance',
@@ -4897,7 +4897,7 @@ class FootballMatchCoder {
     </style>
 </head>
 <body>
-    <h1>⚽ Football Match Coder - User Manual</h1>
+    <h1>Football Match Coder - User Manual</h1>
     
     <p><strong>Version:</strong> 2.0<br>
     <strong>Last Updated:</strong> ${new Date().toLocaleDateString()}</p>
