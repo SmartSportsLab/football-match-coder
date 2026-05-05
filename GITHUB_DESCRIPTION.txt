@@ -1,1 +1,1 @@
-Football Match Coder - A web-based video analysis tool for coding football matches with keyboard shortcuts, event tracking, timeline visualization, and data export. Similar to Metrica Nexus, built for football analysts.
+Smart Sports Lab Match Coder - A web-based video analysis tool for coding football matches with keyboard shortcuts, event tracking, timeline visualization, and data export. Similar to Metrica Nexus, built for football analysts.

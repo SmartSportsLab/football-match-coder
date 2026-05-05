@@ -1,4 +1,4 @@
-// Football Match Coder - Main Application Logic
+// Smart Sports Lab Match Coder - Main Application Logic
 
 class FootballMatchCoder {
     constructor() {
@@ -148,11 +148,6 @@ class FootballMatchCoder {
         document.getElementById('loadVideoBtn').addEventListener('click', () => {
             document.getElementById('videoFileInput').click();
         });
-
-        const youtubeMp4Btn = document.getElementById('youtubeMp4Btn');
-        if (youtubeMp4Btn) {
-            youtubeMp4Btn.addEventListener('click', () => this.importYoutubeToMp4());
-        }
 
         document.getElementById('videoFileInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -466,47 +461,6 @@ class FootballMatchCoder {
         document.body.classList.toggle('compact-ui', enabled);
         if (compactModeBtn) {
             compactModeBtn.textContent = enabled ? 'Standard UI' : 'Compact UI';
-        }
-    }
-
-    async importYoutubeToMp4() {
-        const url = prompt('Paste the YouTube URL to convert to MP4:');
-        if (!url) return;
-
-        const filenameInput = prompt('Optional output filename (without extension):', 'match-video');
-        const filename = (filenameInput || 'match-video').trim().replace(/[^a-zA-Z0-9-_]/g, '_');
-        const endpoint = 'http://127.0.0.1:8765/download';
-
-        try {
-            alert('Starting download and conversion. This can take a minute...');
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, filename })
-            });
-
-            const result = await response.json();
-            if (!response.ok || !result.ok) {
-                throw new Error(result.error || 'Download failed');
-            }
-
-            const videoUrl = result.videoUrl;
-            this.video.src = videoUrl;
-            this.video.load();
-            this.videoFileName = result.filename || `${filename}.mp4`;
-            this.currentSession.videoFileName = this.videoFileName;
-            this.saveToStorage();
-            document.getElementById('saveVideoBtn').style.display = 'inline-block';
-
-            alert(`Video imported successfully: ${this.videoFileName}`);
-        } catch (error) {
-            const installNote =
-                'Could not reach local YouTube backend.\n\n' +
-                'Start it from Terminal in the app folder:\n' +
-                'python3 youtube_backend.py\n\n' +
-                'Then run YouTube -> MP4 again.\n\n' +
-                `Details: ${error.message}`;
-            alert(installNote);
         }
     }
 
@@ -4812,7 +4766,7 @@ class FootballMatchCoder {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Match Coder - User Manual</title>
+    <title>Smart Sports Lab Match Coder - User Manual</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -4897,7 +4851,7 @@ class FootballMatchCoder {
     </style>
 </head>
 <body>
-    <h1>Football Match Coder - User Manual</h1>
+    <h1>Smart Sports Lab Match Coder - User Manual</h1>
     
     <p><strong>Version:</strong> 2.0<br>
     <strong>Last Updated:</strong> ${new Date().toLocaleDateString()}</p>
@@ -5323,13 +5277,6 @@ class FootballMatchCoder {
         <li>Preference is saved automatically</li>
     </ul>
 
-    <h3>YouTube to MP4 Import</h3>
-    <ul>
-        <li>Click <strong>YouTube -&gt; MP4</strong> and paste a link</li>
-        <li>The app uses a local backend to download and convert, then auto-loads the video</li>
-        <li>If backend is not running, start it in Terminal: <code>python3 youtube_backend.py</code></li>
-    </ul>
-
     <h2 id="data-export">7. Data Export</h2>
 
     <h3>Export Formats</h3>
@@ -5408,7 +5355,7 @@ class FootballMatchCoder {
     </div>
 
     <h2>Browser Compatibility</h2>
-    <p>Football Match Coder works best in modern browsers:</p>
+    <p>Smart Sports Lab Match Coder works best in modern browsers:</p>
     <ul>
         <li>Google Chrome (recommended)</li>
         <li>Mozilla Firefox</li>
@@ -5431,7 +5378,7 @@ class FootballMatchCoder {
     <p><strong>Email:</strong> <a href="mailto:daniellevitt32@gmail.com">daniellevitt32@gmail.com</a></p>
 
     <div class="footer">
-        <p>Football Match Coder - Created by Daniel Levitt</p>
+        <p>Smart Sports Lab Match Coder - Created by Daniel Levitt</p>
         <p>This manual was generated on ${new Date().toLocaleString()}</p>
     </div>
 </body>

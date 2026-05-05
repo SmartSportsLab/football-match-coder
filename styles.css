@@ -41,6 +41,11 @@ body {
     color: #22c55e;
 }
 
+.header-left h1 span {
+    display: block;
+    line-height: 1.05;
+}
+
 .session-info {
     display: flex;
     gap: 0.75rem;
@@ -536,7 +541,7 @@ body {
     font-family: 'Courier New', monospace;
     font-size: 1.1rem;
     font-weight: 600;
-    color: #22c55e;
+    color: #60a5fa;
 }
 
 .match-info-display {
@@ -624,19 +629,20 @@ body {
 
 .speed-control label {
     font-size: 0.9rem;
-    color: #94a3b8;
+    color: #60a5fa;
 }
 
 #speedSlider {
     flex: 1;
     min-width: 140px;
     max-width: 240px;
+    accent-color: #60a5fa;
 }
 
 #speedValue {
     min-width: 40px;
     font-weight: 600;
-    color: #22c55e;
+    color: #60a5fa;
 }
 
 /* Compact UI mode */
@@ -1610,4 +1616,205 @@ body.compact-ui .tag-suggestions {
 .app-footer a:hover {
     color: #4ade80;
     text-decoration: underline;
+}
+
+/* ===== Public light theme override ===== */
+body {
+    background: #ffffff;
+    color: #60a5fa;
+}
+
+.app-container {
+    background: #ffffff;
+}
+
+.header {
+    background: #ffffff;
+    border-bottom: 1px solid #dbeafe;
+    box-shadow: 0 1px 4px rgba(96, 165, 250, 0.12);
+}
+
+.header-left h1 {
+    color: #60a5fa;
+}
+
+.session-input {
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    color: #60a5fa;
+}
+
+.session-input::placeholder {
+    color: #93c5fd;
+}
+
+/* Uniform header button sizing */
+.header-right > .btn,
+.header-right > .template-dropdown > .btn,
+.header-right > .preset-dropdown > .btn,
+.header-right > .save-dropdown > .btn,
+.header-right > .export-dropdown > .btn {
+    width: 110px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.1;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.btn-secondary {
+    background: #eff6ff;
+    color: #60a5fa;
+    border: 1px solid #bfdbfe;
+}
+
+.btn-secondary:hover {
+    background: #dbeafe;
+}
+
+.btn-primary {
+    background: #60a5fa;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #3b82f6;
+}
+
+.btn-success {
+    background: #93c5fd;
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background: #60a5fa;
+}
+
+.main-content,
+.video-section,
+.coding-panel,
+.events-log {
+    background: #ffffff;
+}
+
+.video-section,
+.coding-panel,
+.events-log,
+.section {
+    border-color: #dbeafe;
+}
+
+.coding-panel {
+    border-left: 1px solid #dbeafe;
+}
+
+.video-controls {
+    background: #ffffff;
+    border-top: 1px solid #dbeafe;
+}
+
+.control-btn {
+    background: #eff6ff;
+    color: #60a5fa;
+    border: 1px solid #bfdbfe;
+}
+
+.control-btn:hover {
+    background: #dbeafe;
+}
+
+.timeline-header,
+.timeline-info {
+    color: #60a5fa;
+}
+
+.timeline-track {
+    background: #dbeafe;
+}
+
+.timeline-progress {
+    background: #60a5fa;
+}
+
+.section h3,
+.log-header h3,
+.filter-section h4 {
+    color: #60a5fa;
+    border-bottom-color: #dbeafe;
+}
+
+.text-input,
+.select-input,
+.number-input,
+.notes-input {
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    color: #60a5fa;
+}
+
+.text-input::placeholder,
+.number-input::placeholder,
+.notes-input::placeholder {
+    color: #93c5fd;
+}
+
+.event-item {
+    background: #f8fbff;
+    border: 1px solid #dbeafe;
+    color: #60a5fa;
+}
+
+.event-item:hover {
+    background: #eff6ff;
+}
+
+.event-item-selected {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 1px #bfdbfe;
+}
+
+.export-menu,
+.save-menu,
+.template-menu,
+.preset-menu,
+.modal-content,
+.filter-panel {
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+}
+
+.export-option,
+.save-option {
+    color: #60a5fa;
+}
+
+.export-option:hover,
+.save-option:hover {
+    background: #eff6ff;
+}
+
+.app-footer {
+    background: #ffffff;
+    border-top: 1px solid #dbeafe;
+    color: #60a5fa;
+    box-shadow: 0 -1px 4px rgba(96, 165, 250, 0.12);
+}
+
+.app-footer a {
+    color: #3b82f6;
+}
+
+body.compact-ui .header .btn,
+body.compact-ui .header-right > .template-dropdown > .btn,
+body.compact-ui .header-right > .preset-dropdown > .btn,
+body.compact-ui .header-right > .save-dropdown > .btn,
+body.compact-ui .header-right > .export-dropdown > .btn {
+    width: 94px;
+    height: 32px;
+    padding: 0;
+    font-size: 0.74rem;
 }
