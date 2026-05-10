@@ -12,72 +12,86 @@
         <!-- Header -->
         <header class="header">
             <div class="header-left">
-                <h1><span>Smart Sports Lab</span><span>Match Coder</span></h1>
+                <div class="header-brand">
+                    <h1><span>Smart Sports Lab</span><span>Match Coder</span></h1>
+                    <div class="language-selector">
+                        <label for="languageSelect" class="language-label" data-i18n="languageLabel">Language</label>
+                        <select id="languageSelect" class="language-select" aria-label="Language">
+                            <option value="en">English</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="zh-CN">Simplified Chinese</option>
+                            <option value="es">Spanish</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="session-info">
-                    <input type="text" id="sessionName" placeholder="Session Name" class="session-input">
-                    <input type="text" id="homeTeam" placeholder="Home Team" class="session-input">
-                    <input type="text" id="awayTeam" placeholder="Away Team" class="session-input">
+                    <input type="text" id="sessionName" data-i18n-placeholder="sessionName" placeholder="Session Name" class="session-input">
+                    <input type="text" id="homeTeam" data-i18n-placeholder="homeTeam" placeholder="Home Team" class="session-input">
+                    <input type="text" id="awayTeam" data-i18n-placeholder="awayTeam" placeholder="Away Team" class="session-input">
                 </div>
             </div>
             <div class="header-right">
-                <button id="loadVideoBtn" class="btn btn-secondary">Load Video</button>
-                <button id="saveVideoBtn" class="btn btn-secondary" style="display: none;">Save Video</button>
-                <button id="loadSessionBtn" class="btn btn-secondary">Load Session</button>
-                <button id="shortcutsBtn" class="btn btn-secondary">Shortcuts</button>
-                <button id="downloadManualBtn" class="btn btn-secondary" title="Download User Manual">📖 Manual</button>
+                <button id="loadVideoBtn" class="btn btn-secondary" data-i18n="loadVideo">Load Video</button>
+                <button id="saveVideoBtn" class="btn btn-secondary" style="display: none;" data-i18n="saveVideo">Save Video</button>
+                <button id="loadSessionBtn" class="btn btn-secondary" data-i18n="loadSession">Load Session</button>
+                <button id="shortcutsBtn" class="btn btn-secondary" data-i18n="shortcuts">Shortcuts</button>
+                <button id="downloadManualBtn" class="btn btn-secondary" data-i18n-title="manualTitle" title="Download User Manual" data-i18n="manual">📖 Manual</button>
                 <div class="template-dropdown">
-                    <button id="templateBtn" class="btn btn-secondary">Templates ▼</button>
+                    <button id="templateBtn" class="btn btn-secondary" data-i18n="templates">Templates ▼</button>
                     <div class="template-menu" id="templateMenu">
-                        <div class="template-header">Event Templates</div>
-                        <input type="text" id="templateNameInput" placeholder="Template name" class="preset-input">
+                        <div class="template-header" data-i18n="eventTemplates">Event Templates</div>
+                        <input type="text" id="templateNameInput" data-i18n-placeholder="templateName" placeholder="Template name" class="preset-input">
                         <div class="template-actions">
-                            <button id="saveTemplateBtn" class="btn btn-small">Save Current Sequence</button>
-                            <button id="loadTemplateBtn" class="btn btn-small">Apply Template</button>
+                            <button id="saveTemplateBtn" class="btn btn-small" data-i18n="saveCurrentSequence">Save Current Sequence</button>
+                            <button id="loadTemplateBtn" class="btn btn-small" data-i18n="applyTemplate">Apply Template</button>
                         </div>
                         <select id="templateSelect" class="preset-select">
-                            <option value="">Select a template...</option>
+                            <option value="" data-i18n="selectTemplate">Select a template...</option>
                         </select>
                         <div id="templatePreview" class="template-preview"></div>
-                        <button id="deleteTemplateBtn" class="btn btn-small" style="margin-top: 0.5rem; width: 100%; background: #dc2626;">Delete Template</button>
+                        <button id="deleteTemplateBtn" class="btn btn-small" style="margin-top: 0.5rem; width: 100%; background: #dc2626;" data-i18n="deleteTemplate">Delete Template</button>
                     </div>
                 </div>
                 <div class="preset-dropdown">
-                    <button id="presetBtn" class="btn btn-secondary">Button Presets ▼</button>
+                    <button id="presetBtn" class="btn btn-secondary" data-i18n="buttonPresets">Button Presets ▼</button>
                     <div class="preset-menu" id="presetMenu">
-                        <div class="preset-header">Manage Presets</div>
-                        <input type="text" id="presetNameInput" placeholder="Preset name" class="preset-input">
+                        <div class="preset-header" data-i18n="managePresets">Manage Presets</div>
+                        <input type="text" id="presetNameInput" data-i18n-placeholder="presetName" placeholder="Preset name" class="preset-input">
                         <div class="preset-actions">
-                            <button id="savePresetBtn" class="btn btn-small">Save Current</button>
-                            <button id="loadPresetBtn" class="btn btn-small">Load Preset</button>
+                            <button id="savePresetBtn" class="btn btn-small" data-i18n="saveCurrent">Save Current</button>
+                            <button id="loadPresetBtn" class="btn btn-small" data-i18n="loadPreset">Load Preset</button>
                         </div>
                         <select id="presetSelect" class="preset-select">
-                            <option value="">Select a preset...</option>
+                            <option value="" data-i18n="selectPreset">Select a preset...</option>
                         </select>
                         <div class="preset-checkboxes" id="presetCheckboxes"></div>
-                        <button id="resetPresetBtn" class="btn btn-small" style="margin-top: 0.5rem; width: 100%;">Reset to Default</button>
+                        <button id="resetPresetBtn" class="btn btn-small" style="margin-top: 0.5rem; width: 100%;" data-i18n="resetDefault">Reset to Default</button>
                     </div>
                 </div>
-                <button id="compactModeBtn" class="btn btn-secondary">Compact UI</button>
+                <button id="compactModeBtn" class="btn btn-secondary" data-i18n="compactUI">Compact UI</button>
                 <div class="save-dropdown">
-                    <button id="saveBtn" class="btn btn-primary">Save Session ▼</button>
+                    <button id="saveBtn" class="btn btn-primary" data-i18n="saveSession">Save Session ▼</button>
                     <div class="save-menu" id="saveMenu">
-                        <button class="save-option" data-save-format="all">Save All Formats</button>
-                        <button class="save-option" data-save-format="session-json">Session JSON (Full)</button>
-                        <button class="save-option" data-save-format="excel">Excel (.xlsx)</button>
-                        <button class="save-option" data-save-format="csv">CSV</button>
-                        <button class="save-option" data-save-format="xml">XML</button>
+                        <button class="save-option" data-save-format="all" data-i18n="saveAllFormats">Save All Formats</button>
+                        <button class="save-option" data-save-format="session-json" data-i18n="sessionJsonFull">Session JSON (Full)</button>
+                        <button class="save-option" data-save-format="excel" data-i18n="excel">Excel (.xlsx)</button>
+                        <button class="save-option" data-save-format="csv" data-i18n="csv">CSV</button>
+                        <button class="save-option" data-save-format="xml" data-i18n="xml">XML</button>
                     </div>
                 </div>
                 <div class="export-dropdown">
-                    <button id="exportBtn" class="btn btn-success">Export Data ▼</button>
+                    <button id="exportBtn" class="btn btn-success" data-i18n="exportData">Export Data ▼</button>
                     <div class="export-menu" id="exportMenu">
-                        <button class="export-option" data-format="all">Export All Formats</button>
-                        <button class="export-option" data-format="csv">CSV</button>
-                        <button class="export-option" data-format="excel">Excel (.xlsx)</button>
-                        <button class="export-option" data-format="xml">XML</button>
-                        <button class="export-option" data-format="json">JSON (Events Only)</button>
-                        <button class="export-option" data-format="jsonl">JSON Lines</button>
-                        <button class="export-option" data-format="sql">SQL INSERT</button>
+                        <button class="export-option" data-format="all" data-i18n="exportAllFormats">Export All Formats</button>
+                        <button class="export-option" data-format="csv" data-i18n="csv">CSV</button>
+                        <button class="export-option" data-format="excel" data-i18n="excel">Excel (.xlsx)</button>
+                        <button class="export-option" data-format="xml" data-i18n="xml">XML</button>
+                        <button class="export-option" data-format="json" data-i18n="jsonEvents">JSON (Events Only)</button>
+                        <button class="export-option" data-format="jsonl" data-i18n="jsonLines">JSON Lines</button>
+                        <button class="export-option" data-format="sql" data-i18n="sqlInsert">SQL INSERT</button>
                     </div>
                 </div>
             </div>
@@ -100,7 +114,7 @@
                     <div class="video-timeline-container">
                         <div class="video-timeline">
                             <div class="timeline-header">
-                                <span>Event Timeline</span>
+                                <span data-i18n="eventTimeline">Event Timeline</span>
                             </div>
                             <div class="timeline-track-container" id="timelineTrackContainer">
                                 <div class="timeline-track" id="timelineTrack">
@@ -123,10 +137,10 @@
                     <div class="playback-row">
                         <button id="rewind" class="control-btn">⏪ -5s</button>
                         <button id="forward" class="control-btn">⏩ +5s</button>
-                        <button id="playPause" class="control-btn">▶ Play</button>
-                        <button id="muteBtn" class="control-btn">🔇 Mute</button>
+                        <button id="playPause" class="control-btn" data-i18n="play">▶ Play</button>
+                        <button id="muteBtn" class="control-btn" data-i18n="mute">🔇 Mute</button>
                         <div class="speed-control">
-                            <label>Playback Speed:</label>
+                            <label data-i18n="playbackSpeed">Playback Speed:</label>
                             <input type="range" id="speedSlider" min="0.25" max="4" step="0.25" value="1">
                             <span id="speedValue">1.0x</span>
                         </div>
@@ -139,33 +153,33 @@
                 <div class="panel-resizer" id="panelResizer"></div>
                 <!-- Match Info -->
                 <div class="section">
-                    <h3>Match Information</h3>
+                    <h3 data-i18n="matchInformation">Match Information</h3>
                     <div class="input-group">
-                        <label>Half:</label>
+                        <label data-i18n="half">Half:</label>
                         <select id="half" class="select-input">
-                            <option value="1">1st Half</option>
-                            <option value="2">2nd Half</option>
-                            <option value="ET1">Extra Time 1</option>
-                            <option value="ET2">Extra Time 2</option>
+                            <option value="1" data-i18n="half1st">1st Half</option>
+                            <option value="2" data-i18n="half2nd">2nd Half</option>
+                            <option value="ET1" data-i18n="et1">Extra Time 1</option>
+                            <option value="ET2" data-i18n="et2">Extra Time 2</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Minute:</label>
+                        <label data-i18n="minute">Minute:</label>
                         <input type="number" id="minute" placeholder="0" class="number-input" min="0" max="120">
                     </div>
                     <div class="input-group">
-                        <label>Home Score:</label>
+                        <label data-i18n="homeScore">Home Score:</label>
                         <input type="number" id="homeScore" placeholder="0" class="number-input" min="0">
                     </div>
                     <div class="input-group">
-                        <label>Away Score:</label>
+                        <label data-i18n="awayScore">Away Score:</label>
                         <input type="number" id="awayScore" placeholder="0" class="number-input" min="0">
                     </div>
                     <div class="input-group">
-                        <label>Half Start Markers:</label>
+                        <label data-i18n="halfStartMarkers">Half Start Markers:</label>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button id="markFirstHalfStartBtn" class="btn btn-small">Mark 1st Half Start</button>
-                            <button id="markSecondHalfStartBtn" class="btn btn-small">Mark 2nd Half Start</button>
+                            <button id="markFirstHalfStartBtn" class="btn btn-small" data-i18n="markFirstHalfStart">Mark 1st Half Start</button>
+                            <button id="markSecondHalfStartBtn" class="btn btn-small" data-i18n="markSecondHalfStart">Mark 2nd Half Start</button>
                         </div>
                         <div id="halfStartStatus" class="lineup-status" style="display: none; margin-top: 0.4rem;"></div>
                     </div>
@@ -173,17 +187,17 @@
 
                 <!-- Lineup Loading -->
                 <div class="section">
-                    <h3>Load Lineups</h3>
+                    <h3 data-i18n="loadLineups">Load Lineups</h3>
                     <div class="input-group">
-                        <label>Load from File (CSV/Excel):</label>
-                        <button id="loadLineupFileBtn" class="btn btn-secondary" style="width: 100%;">Choose File</button>
+                        <label data-i18n="loadFromFile">Load from File (CSV/Excel):</label>
+                        <button id="loadLineupFileBtn" class="btn btn-secondary" style="width: 100%;" data-i18n="chooseFile">Choose File</button>
                         <input type="file" id="lineupFileInput" accept=".csv,.xlsx,.xls" style="display: none;">
                     </div>
                     <div class="input-group">
-                        <label>Or Load from URL:</label>
+                        <label data-i18n="loadFromUrl">Or Load from URL:</label>
                         <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="lineupUrlInput" placeholder="Enter lineup URL" class="text-input" style="flex: 1;">
-                            <button id="loadLineupUrlBtn" class="btn btn-secondary">Load</button>
+                            <input type="text" id="lineupUrlInput" data-i18n-placeholder="enterLineupUrl" placeholder="Enter lineup URL" class="text-input" style="flex: 1;">
+                            <button id="loadLineupUrlBtn" class="btn btn-secondary" data-i18n="load">Load</button>
                         </div>
                     </div>
                     <div id="lineupStatus" class="lineup-status" style="display: none;"></div>
@@ -191,24 +205,24 @@
 
                 <!-- Player Selection -->
                 <div class="section">
-                    <h3>Player Selection</h3>
+                    <h3 data-i18n="playerSelection">Player Selection</h3>
                     <div class="input-group">
-                        <label>Team:</label>
+                        <label data-i18n="team">Team:</label>
                         <select id="team" class="select-input">
-                            <option value="home">Home</option>
-                            <option value="away">Away</option>
+                            <option value="home" data-i18n="home">Home</option>
+                            <option value="away" data-i18n="away">Away</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Home Team Player:</label>
+                        <label data-i18n="homeTeamPlayer">Home Team Player:</label>
                         <select id="homePlayerSelect" class="select-input">
-                            <option value="">Select Home Player</option>
+                            <option value="" data-i18n="selectHomePlayer">Select Home Player</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Away Team Player:</label>
+                        <label data-i18n="awayTeamPlayer">Away Team Player:</label>
                         <select id="awayPlayerSelect" class="select-input">
-                            <option value="">Select Away Player</option>
+                            <option value="" data-i18n="selectAwayPlayer">Select Away Player</option>
                         </select>
                     </div>
                     <div id="loadedPlayersInfo" class="loaded-players-info" style="display: none;"></div>
@@ -216,185 +230,185 @@
 
                 <!-- Pass Events -->
                 <div class="section" data-category="pass">
-                    <h3>Pass Events</h3>
+                    <h3 data-i18n="passEvents">Pass Events</h3>
                     <div class="event-buttons">
                         <button class="event-btn pass-btn" data-event="pass-complete" data-key="P">
                             <span class="key-hint">P</span>
                             <span class="event-counter" data-event="pass-complete">0</span>
-                            Pass Complete
+                            <span data-i18n="passComplete">Pass Complete</span>
                         </button>
                         <button class="event-btn pass-btn" data-event="pass-incomplete" data-key="I">
                             <span class="key-hint">I</span>
                             <span class="event-counter" data-event="pass-incomplete">0</span>
-                            Pass Incomplete
+                            <span data-i18n="passIncomplete">Pass Incomplete</span>
                         </button>
                         <button class="event-btn pass-btn" data-event="key-pass" data-key="Shift+K">
                             <span class="key-hint">⇧K</span>
                             <span class="event-counter" data-event="key-pass">0</span>
-                            Key Pass
+                            <span data-i18n="keyPass">Key Pass</span>
                         </button>
                         <button class="event-btn pass-btn" data-event="assist" data-key="A">
                             <span class="key-hint">A</span>
                             <span class="event-counter" data-event="assist">0</span>
-                            Assist
+                            <span data-i18n="assist">Assist</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Shot Events -->
                 <div class="section" data-category="shot">
-                    <h3>Shot Events</h3>
+                    <h3 data-i18n="shotEvents">Shot Events</h3>
                     <div class="event-buttons">
                         <button class="event-btn shot-btn" data-event="shot-on-target" data-key="S">
                             <span class="key-hint">S</span>
                             <span class="event-counter" data-event="shot-on-target">0</span>
-                            Shot On Target
+                            <span data-i18n="shotOnTarget">Shot On Target</span>
                         </button>
                         <button class="event-btn shot-btn" data-event="shot-off-target" data-key="O">
                             <span class="key-hint">O</span>
                             <span class="event-counter" data-event="shot-off-target">0</span>
-                            Shot Off Target
+                            <span data-i18n="shotOffTarget">Shot Off Target</span>
                         </button>
                         <button class="event-btn shot-btn" data-event="goal" data-key="G">
                             <span class="key-hint">G</span>
                             <span class="event-counter" data-event="goal">0</span>
-                            Goal
+                            <span data-i18n="goal">Goal</span>
                         </button>
                         <button class="event-btn shot-btn" data-event="shot-blocked" data-key="B">
                             <span class="key-hint">B</span>
                             <span class="event-counter" data-event="shot-blocked">0</span>
-                            Shot Blocked
+                            <span data-i18n="shotBlocked">Shot Blocked</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Defensive Events -->
                 <div class="section" data-category="defensive">
-                    <h3>Defensive Events</h3>
+                    <h3 data-i18n="defensiveEvents">Defensive Events</h3>
                     <div class="event-buttons">
                         <button class="event-btn defensive-btn" data-event="tackle" data-key="T">
                             <span class="key-hint">T</span>
                             <span class="event-counter" data-event="tackle">0</span>
-                            Tackle
+                            <span data-i18n="tackle">Tackle</span>
                         </button>
                         <button class="event-btn defensive-btn" data-event="interception" data-key="N">
                             <span class="key-hint">N</span>
                             <span class="event-counter" data-event="interception">0</span>
-                            Interception
+                            <span data-i18n="interception">Interception</span>
                         </button>
                         <button class="event-btn defensive-btn" data-event="clearance" data-key="C">
                             <span class="key-hint">C</span>
                             <span class="event-counter" data-event="clearance">0</span>
-                            Clearance
+                            <span data-i18n="clearance">Clearance</span>
                         </button>
                         <button class="event-btn defensive-btn" data-event="block" data-key="Shift+L">
                             <span class="key-hint">⇧L</span>
                             <span class="event-counter" data-event="block">0</span>
-                            Block
+                            <span data-i18n="block">Block</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Dribble & Skill Events -->
                 <div class="section" data-category="dribble">
-                    <h3>Dribble & Skills</h3>
+                    <h3 data-i18n="dribbleSkills">Dribble & Skills</h3>
                     <div class="event-buttons">
                         <button class="event-btn dribble-btn" data-event="dribble-success" data-key="D">
                             <span class="key-hint">D</span>
                             <span class="event-counter" data-event="dribble-success">0</span>
-                            Dribble Success
+                            <span data-i18n="dribbleSuccess">Dribble Success</span>
                         </button>
                         <button class="event-btn dribble-btn" data-event="dribble-fail" data-key="F">
                             <span class="key-hint">F</span>
                             <span class="event-counter" data-event="dribble-fail">0</span>
-                            Dribble Fail
+                            <span data-i18n="dribbleFail">Dribble Fail</span>
                         </button>
                         <button class="event-btn dribble-btn" data-event="take-on" data-key="W">
                             <span class="key-hint">W</span>
                             <span class="event-counter" data-event="take-on">0</span>
-                            Take-On
+                            <span data-i18n="takeOn">Take-On</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Foul & Card Events -->
                 <div class="section" data-category="foul">
-                    <h3>Fouls & Cards</h3>
+                    <h3 data-i18n="foulsCards">Fouls & Cards</h3>
                     <div class="event-buttons">
                         <button class="event-btn foul-btn" data-event="foul" data-key="U">
                             <span class="key-hint">U</span>
                             <span class="event-counter" data-event="foul">0</span>
-                            Foul
+                            <span data-i18n="foul">Foul</span>
                         </button>
                         <button class="event-btn foul-btn" data-event="yellow-card" data-key="Y">
                             <span class="key-hint">Y</span>
                             <span class="event-counter" data-event="yellow-card">0</span>
-                            Yellow Card
+                            <span data-i18n="yellowCard">Yellow Card</span>
                         </button>
                         <button class="event-btn foul-btn" data-event="red-card" data-key="Shift+R">
                             <span class="key-hint">⇧R</span>
                             <span class="event-counter" data-event="red-card">0</span>
-                            Red Card
+                            <span data-i18n="redCard">Red Card</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Other Events -->
                 <div class="section" data-category="other">
-                    <h3>Other Events</h3>
+                    <h3 data-i18n="otherEvents">Other Events</h3>
                     <div class="event-buttons">
                         <button class="event-btn other-btn" data-event="corner" data-key="1">
                             <span class="key-hint">1</span>
                             <span class="event-counter" data-event="corner">0</span>
-                            Corner
+                            <span data-i18n="corner">Corner</span>
                         </button>
                         <button class="event-btn other-btn" data-event="free-kick" data-key="2">
                             <span class="key-hint">2</span>
                             <span class="event-counter" data-event="free-kick">0</span>
-                            Free Kick
+                            <span data-i18n="freeKick">Free Kick</span>
                         </button>
                         <button class="event-btn other-btn" data-event="throw-in" data-key="3">
                             <span class="key-hint">3</span>
                             <span class="event-counter" data-event="throw-in">0</span>
-                            Throw-In
+                            <span data-i18n="throwIn">Throw-In</span>
                         </button>
                         <button class="event-btn other-btn" data-event="offside" data-key="4">
                             <span class="key-hint">4</span>
                             <span class="event-counter" data-event="offside">0</span>
-                            Offside
+                            <span data-i18n="offside">Offside</span>
                         </button>
                         <button class="event-btn other-btn" data-event="substitution" data-key="5">
                             <span class="key-hint">5</span>
                             <span class="event-counter" data-event="substitution">0</span>
-                            Substitution
+                            <span data-i18n="substitution">Substitution</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Location/Zone -->
                 <div class="section">
-                    <h3>Location</h3>
+                    <h3 data-i18n="location">Location</h3>
                     <div class="input-group">
-                        <label>Zone:</label>
+                        <label data-i18n="zone">Zone:</label>
                         <select id="zone" class="select-input">
-                            <option value="">Select Zone</option>
-                            <option value="defensive-third">Defensive Third</option>
-                            <option value="middle-third">Middle Third</option>
-                            <option value="attacking-third">Attacking Third</option>
-                            <option value="penalty-area">Penalty Area</option>
-                            <option value="box">Box</option>
+                            <option value="" data-i18n="selectZone">Select Zone</option>
+                            <option value="defensive-third" data-i18n="defensiveThird">Defensive Third</option>
+                            <option value="middle-third" data-i18n="middleThird">Middle Third</option>
+                            <option value="attacking-third" data-i18n="attackingThird">Attacking Third</option>
+                            <option value="penalty-area" data-i18n="penaltyArea">Penalty Area</option>
+                            <option value="box" data-i18n="box">Box</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Attacking Direction:</label>
+                        <label data-i18n="attackingDirection">Attacking Direction:</label>
                         <select id="attackDirection" class="select-input">
-                            <option value="left-to-right">Left-to-right</option>
-                            <option value="right-to-left">Right-to-left</option>
+                            <option value="left-to-right" data-i18n="leftToRight">Left-to-right</option>
+                            <option value="right-to-left" data-i18n="rightToLeft">Right-to-left</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label>Pitch Click Location:</label>
-                        <div id="pitchLocator" class="pitch-locator" title="Click to mark event location on pitch">
+                        <label data-i18n="pitchClickLocation">Pitch Click Location:</label>
+                        <div id="pitchLocator" class="pitch-locator" data-i18n-title="pitchLocatorTitle" title="Click to mark event location on pitch">
                             <div class="pitch-halfway-line"></div>
                             <div class="pitch-center-circle"></div>
                             <div class="pitch-box pitch-box-left"></div>
@@ -402,19 +416,19 @@
                             <div id="pitchMarker" class="pitch-marker" style="display: none;"></div>
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.4rem;">
-                            <span id="pitchCoordsText" style="font-size: 0.8rem; color: #94a3b8;">No pitch point selected</span>
-                            <button id="clearPitchPointBtn" class="btn btn-small" type="button">Clear</button>
+                            <span id="pitchCoordsText" style="font-size: 0.8rem; color: #94a3b8;" data-i18n="noPitchPoint">No pitch point selected</span>
+                            <button id="clearPitchPointBtn" class="btn btn-small" type="button" data-i18n="clear">Clear</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tags -->
                 <div class="section">
-                    <h3>Tags</h3>
+                    <h3 data-i18n="tags">Tags</h3>
                     <div class="input-group">
                         <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                            <input type="text" id="tagInput" placeholder="Add tag..." class="text-input" style="flex: 1;">
-                            <button id="addTagBtn" class="btn btn-small">Add</button>
+                            <input type="text" id="tagInput" data-i18n-placeholder="addTag" placeholder="Add tag..." class="text-input" style="flex: 1;">
+                            <button id="addTagBtn" class="btn btn-small" data-i18n="add">Add</button>
                         </div>
                         <div id="selectedTags" class="tags-container"></div>
                         <div class="tag-suggestions" id="tagSuggestions"></div>
@@ -423,8 +437,8 @@
 
                 <!-- Notes -->
                 <div class="section">
-                    <h3>Notes</h3>
-                    <textarea id="notes" placeholder="Add notes about this event..." class="notes-input"></textarea>
+                    <h3 data-i18n="notes">Notes</h3>
+                    <textarea id="notes" data-i18n-placeholder="notesPlaceholder" placeholder="Add notes about this event..." class="notes-input"></textarea>
                 </div>
             </div>
         </div>
@@ -433,74 +447,74 @@
         <div class="events-log" id="eventsLog">
             <div class="events-log-resizer" id="eventsLogResizer"></div>
             <div class="log-header">
-                <h3>Events Log</h3>
+                <h3 data-i18n="eventsLog">Events Log</h3>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button id="filterBtn" class="btn btn-small">Filter</button>
-                    <button id="clearLog" class="btn btn-small">Clear Log</button>
+                    <button id="filterBtn" class="btn btn-small" data-i18n="filter">Filter</button>
+                    <button id="clearLog" class="btn btn-small" data-i18n="clearLog">Clear Log</button>
                 </div>
             </div>
             <!-- Filter Panel -->
             <div id="filterPanel" class="filter-panel" style="display: none;">
                 <div class="filter-section">
-                    <h4>Search</h4>
-                    <input type="text" id="searchInput" placeholder="Search events..." class="text-input">
+                    <h4 data-i18n="search">Search</h4>
+                    <input type="text" id="searchInput" data-i18n-placeholder="searchEvents" placeholder="Search events..." class="text-input">
                 </div>
                 <div class="filter-section">
-                    <h4>Event Type</h4>
+                    <h4 data-i18n="eventType">Event Type</h4>
                     <select id="filterEventType" class="select-input" multiple style="height: 100px;">
-                        <option value="pass-complete">Pass Complete</option>
-                        <option value="pass-incomplete">Pass Incomplete</option>
-                        <option value="key-pass">Key Pass</option>
-                        <option value="assist">Assist</option>
-                        <option value="shot-on-target">Shot On Target</option>
-                        <option value="shot-off-target">Shot Off Target</option>
-                        <option value="goal">Goal</option>
-                        <option value="shot-blocked">Shot Blocked</option>
-                        <option value="tackle">Tackle</option>
-                        <option value="interception">Interception</option>
-                        <option value="clearance">Clearance</option>
-                        <option value="block">Block</option>
-                        <option value="dribble-success">Dribble Success</option>
-                        <option value="dribble-fail">Dribble Fail</option>
-                        <option value="take-on">Take-On</option>
-                        <option value="foul">Foul</option>
-                        <option value="yellow-card">Yellow Card</option>
-                        <option value="red-card">Red Card</option>
-                        <option value="corner">Corner</option>
-                        <option value="free-kick">Free Kick</option>
-                        <option value="throw-in">Throw-In</option>
-                        <option value="offside">Offside</option>
-                        <option value="substitution">Substitution</option>
+                        <option value="pass-complete" data-i18n="passComplete">Pass Complete</option>
+                        <option value="pass-incomplete" data-i18n="passIncomplete">Pass Incomplete</option>
+                        <option value="key-pass" data-i18n="keyPass">Key Pass</option>
+                        <option value="assist" data-i18n="assist">Assist</option>
+                        <option value="shot-on-target" data-i18n="shotOnTarget">Shot On Target</option>
+                        <option value="shot-off-target" data-i18n="shotOffTarget">Shot Off Target</option>
+                        <option value="goal" data-i18n="goal">Goal</option>
+                        <option value="shot-blocked" data-i18n="shotBlocked">Shot Blocked</option>
+                        <option value="tackle" data-i18n="tackle">Tackle</option>
+                        <option value="interception" data-i18n="interception">Interception</option>
+                        <option value="clearance" data-i18n="clearance">Clearance</option>
+                        <option value="block" data-i18n="block">Block</option>
+                        <option value="dribble-success" data-i18n="dribbleSuccess">Dribble Success</option>
+                        <option value="dribble-fail" data-i18n="dribbleFail">Dribble Fail</option>
+                        <option value="take-on" data-i18n="takeOn">Take-On</option>
+                        <option value="foul" data-i18n="foul">Foul</option>
+                        <option value="yellow-card" data-i18n="yellowCard">Yellow Card</option>
+                        <option value="red-card" data-i18n="redCard">Red Card</option>
+                        <option value="corner" data-i18n="corner">Corner</option>
+                        <option value="free-kick" data-i18n="freeKick">Free Kick</option>
+                        <option value="throw-in" data-i18n="throwIn">Throw-In</option>
+                        <option value="offside" data-i18n="offside">Offside</option>
+                        <option value="substitution" data-i18n="substitution">Substitution</option>
                     </select>
                 </div>
                 <div class="filter-section">
-                    <h4>Team</h4>
+                    <h4 data-i18n="teamShort">Team</h4>
                     <select id="filterTeam" class="select-input">
-                        <option value="">All Teams</option>
-                        <option value="home">Home</option>
-                        <option value="away">Away</option>
+                        <option value="" data-i18n="allTeams">All Teams</option>
+                        <option value="home" data-i18n="home">Home</option>
+                        <option value="away" data-i18n="away">Away</option>
                     </select>
                 </div>
                 <div class="filter-section">
-                    <h4>Player</h4>
-                    <input type="text" id="filterPlayer" placeholder="Player name..." class="text-input">
+                    <h4 data-i18n="player">Player</h4>
+                    <input type="text" id="filterPlayer" data-i18n-placeholder="playerNamePh" placeholder="Player name..." class="text-input">
                 </div>
                 <div class="filter-section">
-                    <h4>Tags</h4>
+                    <h4 data-i18n="tagsFilter">Tags</h4>
                     <div id="filterTags" class="tags-filter"></div>
-                    <input type="text" id="filterTagInput" placeholder="Add tag filter..." class="text-input" style="margin-top: 0.5rem;">
+                    <input type="text" id="filterTagInput" data-i18n-placeholder="addTagFilter" placeholder="Add tag filter..." class="text-input" style="margin-top: 0.5rem;">
                 </div>
                 <div class="filter-section">
-                    <h4>Time Range</h4>
+                    <h4 data-i18n="timeRange">Time Range</h4>
                     <div style="display: flex; gap: 0.5rem;">
-                        <input type="number" id="filterTimeStart" placeholder="Start (sec)" class="number-input" style="flex: 1;">
-                        <input type="number" id="filterTimeEnd" placeholder="End (sec)" class="number-input" style="flex: 1;">
+                        <input type="number" id="filterTimeStart" data-i18n-placeholder="startSec" placeholder="Start (sec)" class="number-input" style="flex: 1;">
+                        <input type="number" id="filterTimeEnd" data-i18n-placeholder="endSec" placeholder="End (sec)" class="number-input" style="flex: 1;">
                     </div>
                 </div>
                 <div class="filter-actions">
-                    <button id="applyFilterBtn" class="btn btn-primary">Apply Filters</button>
-                    <button id="clearFilterBtn" class="btn btn-secondary">Clear</button>
-                    <button id="exportFilteredBtn" class="btn btn-success">Export Filtered</button>
+                    <button id="applyFilterBtn" class="btn btn-primary" data-i18n="applyFilters">Apply Filters</button>
+                    <button id="clearFilterBtn" class="btn btn-secondary" data-i18n="clearFilters">Clear</button>
+                    <button id="exportFilteredBtn" class="btn btn-success" data-i18n="exportFiltered">Export Filtered</button>
                 </div>
             </div>
             <div id="eventsList" class="events-list"></div>
@@ -515,7 +529,7 @@
     <div id="shortcutsModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Keyboard Shortcuts</h2>
+                <h2 data-i18n="keyboardShortcuts">Keyboard Shortcuts</h2>
                 <button id="closeShortcutsBtn" class="modal-close">&times;</button>
             </div>
             <div class="modal-body" id="shortcutsContent">
@@ -524,11 +538,12 @@
         </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
     
     <!-- Footer -->
     <footer class="app-footer">
-        <p>Created by Daniel Levitt. For all questions and feedback, contact <a href="mailto:daniellevitt32@gmail.com">daniellevitt32@gmail.com</a>.</p>
+        <p><span data-i18n="footerText">Created by Daniel Levitt. For all questions and feedback, contact</span> <a href="mailto:daniellevitt32@gmail.com">daniellevitt32@gmail.com</a>.</p>
     </footer>
 </body>
 </html>

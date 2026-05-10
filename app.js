@@ -435,6 +435,8 @@ class FootballMatchCoder {
         
         // Try to restore video from storage
         this.restoreVideoFromStorage();
+
+        window.addEventListener('app-language-changed', () => this.refreshDynamicLocaleStrings());
     }
 
     toggleCompactMode() {
@@ -460,8 +462,53 @@ class FootballMatchCoder {
         const compactModeBtn = document.getElementById('compactModeBtn');
         document.body.classList.toggle('compact-ui', enabled);
         if (compactModeBtn) {
-            compactModeBtn.textContent = enabled ? 'Standard UI' : 'Compact UI';
+            const compactLabel = typeof window.t === 'function' ? window.t('compactUI') : 'Compact UI';
+            const standardLabel = typeof window.t === 'function' ? window.t('standardUI') : 'Standard UI';
+            compactModeBtn.textContent = enabled ? standardLabel : compactLabel;
         }
+    }
+
+    updatePlayPauseLabels() {
+        if (!this.video) return;
+        const btn = document.getElementById('playPause');
+        const btnMain = document.getElementById('playPauseMain');
+        const playLabel = typeof window.t === 'function' ? window.t('play') : '▶ Play';
+        const pauseLabel = typeof window.t === 'function' ? window.t('pause') : '⏸ Pause';
+        if (this.video.paused) {
+            if (btn) btn.textContent = playLabel;
+            if (btnMain) {
+                btnMain.textContent = '▶';
+                btnMain.classList.remove('playing');
+            }
+        } else {
+            if (btn) btn.textContent = pauseLabel;
+            if (btnMain) {
+                btnMain.textContent = '⏸';
+                btnMain.classList.add('playing');
+            }
+        }
+    }
+
+    updateMuteButtonLabel() {
+        const muteBtn = document.getElementById('muteBtn');
+        if (!muteBtn || !this.video) return;
+        const muteLabel = typeof window.t === 'function' ? window.t('mute') : '🔇 Mute';
+        const unmuteLabel = typeof window.t === 'function' ? window.t('unmute') : '🔊 Unmute';
+        muteBtn.textContent = this.video.muted ? unmuteLabel : muteLabel;
+    }
+
+    refreshDynamicLocaleStrings() {
+        const compactModeBtn = document.getElementById('compactModeBtn');
+        if (compactModeBtn) {
+            const enabled = document.body.classList.contains('compact-ui');
+            const compactLabel = typeof window.t === 'function' ? window.t('compactUI') : 'Compact UI';
+            const standardLabel = typeof window.t === 'function' ? window.t('standardUI') : 'Standard UI';
+            compactModeBtn.textContent = enabled ? standardLabel : compactLabel;
+        }
+        this.updatePitchLocatorUI();
+        this.updateMuteButtonLabel();
+        this.updatePlayPauseLabels();
+        this.updateEventsList();
     }
 
     setupVideoResizer() {
@@ -820,14 +867,20 @@ class FootballMatchCoder {
 
         if (!this.currentPitchLocation) {
             marker.style.display = 'none';
-            coordsText.textContent = 'No pitch point selected';
+            coordsText.textContent =
+                typeof window.t === 'function' ? window.t('noPitchPoint') : 'No pitch point selected';
             return;
         }
 
         marker.style.display = 'block';
         marker.style.left = `${this.currentPitchLocation.x}%`;
         marker.style.top = `${this.currentPitchLocation.y}%`;
-        coordsText.textContent = `Pitch: X ${this.currentPitchLocation.x}, Y ${this.currentPitchLocation.y}`;
+        const x = this.currentPitchLocation.x;
+        const y = this.currentPitchLocation.y;
+        coordsText.textContent =
+            typeof window.t === 'function'
+                ? window.t('pitchCoords', { x, y })
+                : `Pitch: X ${x}, Y ${y}`;
     }
 
     autoUpdateMatchTime() {
@@ -1382,13 +1435,7 @@ class FootballMatchCoder {
                 // Restore previous speed
                 this.video.playbackRate = this.previousSpeed;
                 this.setSpeed(this.previousSpeed);
-                const btnMain = document.getElementById('playPauseMain');
-                const btn = document.getElementById('playPause');
-                if (btnMain) {
-                    btnMain.textContent = '▶';
-                    btnMain.classList.remove('playing');
-                }
-                if (btn) btn.textContent = '▶ Play';
+                this.updatePlayPauseLabels();
             }
         });
 
@@ -1447,13 +1494,7 @@ class FootballMatchCoder {
                     this.setSpeed(2.0);
                     if (this.video.paused) {
                         this.video.play();
-                        const btnMain = document.getElementById('playPauseMain');
-                        const btn = document.getElementById('playPause');
-                        if (btnMain) {
-                            btnMain.textContent = '⏸';
-                            btnMain.classList.add('playing');
-                        }
-                        if (btn) btn.textContent = '⏸ Pause';
+                        this.updatePlayPauseLabels();
                     }
                 }
                 return;
@@ -1475,7 +1516,7 @@ class FootballMatchCoder {
                 e.preventDefault();
                 if (!this.video.paused) {
                     this.video.pause();
-                    document.getElementById('playPause').textContent = '▶ Play';
+                    this.updatePlayPauseLabels();
                 }
                 return;
             }
@@ -1636,24 +1677,12 @@ class FootballMatchCoder {
     }
 
     togglePlayPause() {
-        const btn = document.getElementById('playPause');
-        const btnMain = document.getElementById('playPauseMain');
-        
         if (this.video.paused) {
             this.video.play();
-            btn.textContent = '⏸ Pause';
-            if (btnMain) {
-                btnMain.textContent = '⏸';
-                btnMain.classList.add('playing');
-            }
         } else {
             this.video.pause();
-            btn.textContent = '▶ Play';
-            if (btnMain) {
-                btnMain.textContent = '▶';
-                btnMain.classList.remove('playing');
-            }
         }
+        this.updatePlayPauseLabels();
     }
 
     seek(seconds) {
@@ -1664,9 +1693,9 @@ class FootballMatchCoder {
         this.video.muted = !this.video.muted;
         const muteBtn = document.getElementById('muteBtn');
         if (muteBtn) {
-            muteBtn.textContent = this.video.muted ? '🔊 Unmute' : '🔇 Mute';
             muteBtn.classList.toggle('active', this.video.muted);
         }
+        this.updateMuteButtonLabel();
     }
 
     seekFrame(direction, force = false) {
@@ -1682,13 +1711,7 @@ class FootballMatchCoder {
         // Pause video if playing to allow frame-by-frame
         if (!this.video.paused) {
             this.video.pause();
-            const btnMain = document.getElementById('playPauseMain');
-            const btn = document.getElementById('playPause');
-            if (btnMain) {
-                btnMain.textContent = '▶';
-                btnMain.classList.remove('playing');
-            }
-            if (btn) btn.textContent = '▶ Play';
+            this.updatePlayPauseLabels();
         }
         
         const currentTime = this.video.currentTime || 0;
@@ -1856,13 +1879,7 @@ class FootballMatchCoder {
                 this.video.currentTime = event.timestamp;
                 if (this.video.paused) {
                     this.video.play();
-                    const btnMain = document.getElementById('playPauseMain');
-                    const btn = document.getElementById('playPause');
-                    if (btnMain) {
-                        btnMain.textContent = '⏸';
-                        btnMain.classList.add('playing');
-                    }
-                    if (btn) btn.textContent = '⏸ Pause';
+                    this.updatePlayPauseLabels();
                 }
             });
             
@@ -2146,9 +2163,17 @@ class FootballMatchCoder {
 
         if (eventsToShow.length === 0) {
             if (this.filteredEvents !== null) {
-                eventsList.innerHTML = `<div style="padding: 1rem; text-align: center; color: #94a3b8;">No events match the current filters (${totalEvents} total events)</div>`;
+                const msg =
+                    typeof window.t === 'function'
+                        ? window.t('noEventsFilter', { n: totalEvents })
+                        : `No events match the current filters (${totalEvents} total events)`;
+                eventsList.innerHTML = `<div style="padding: 1rem; text-align: center; color: #94a3b8;">${msg}</div>`;
             } else {
-                eventsList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #94a3b8;">No events recorded yet</div>';
+                const empty =
+                    typeof window.t === 'function'
+                        ? window.t('noEventsYet')
+                        : 'No events recorded yet';
+                eventsList.innerHTML = `<div style="padding: 1rem; text-align: center; color: #94a3b8;">${empty}</div>`;
             }
             return;
         }
@@ -2157,7 +2182,10 @@ class FootballMatchCoder {
         if (this.filteredEvents !== null) {
             const filterStatus = document.createElement('div');
             filterStatus.style.cssText = 'padding: 0.5rem 1rem; background: #334155; color: #22c55e; font-size: 0.85rem; border-bottom: 1px solid #475569;';
-            filterStatus.textContent = `Showing ${filteredCount} of ${totalEvents} events`;
+            filterStatus.textContent =
+                typeof window.t === 'function'
+                    ? window.t('showingEvents', { f: filteredCount, t: totalEvents })
+                    : `Showing ${filteredCount} of ${totalEvents} events`;
             eventsList.appendChild(filterStatus);
         }
 
